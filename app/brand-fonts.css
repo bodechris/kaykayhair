@@ -1,0 +1,161 @@
+@charset "utf-8";
+
+/* =========================================================
+   KAYKAY HAIR BRAND FONTS
+   Font files should live in: /fonts
+   CSS path assumes this file is imported from /styles or /scss
+   ========================================================= */
+
+
+/* -------------------------------
+   Bodoni Moda
+   Use for: huge editorial mastheads, luxury titles
+   Example: Kaykay Hair, Lookbook, Beauty Stories
+-------------------------------- */
+
+@font-face {
+  font-family: "Kaykay Bodoni";
+  src: url("../public/fonts/BodoniModa[opsz,wght].ttf") format("truetype");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+/* -------------------------------
+   Fraunces 72pt
+   Use for: bold editorial feature headings
+   Example: Protective Styles, Summer Glow, Hair Care Rituals
+-------------------------------- */
+
+@font-face {
+  font-family: "Kaykay Fraunces";
+  src: url("../public/fonts/Fraunces72pt-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kaykay Fraunces";
+  src: url("../public/fonts/Fraunces72pt-LightItalic.ttf") format("truetype");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kaykay Fraunces";
+  src: url("../public/fonts/Fraunces72pt-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kaykay Fraunces";
+  src: url("../public/fonts/Fraunces72pt-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kaykay Fraunces";
+  src: url("../public/fonts/Fraunces72pt-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kaykay Fraunces";
+  src: url("../public/fonts/Fraunces72pt-SemiBoldItalic.ttf") format("truetype");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kaykay Fraunces";
+  src: url("../public/fonts/Fraunces72pt-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kaykay Fraunces";
+  src: url("../public/fonts/Fraunces72pt-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kaykay Fraunces";
+  src: url("../public/fonts/Fraunces72pt-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kaykay Fraunces";
+  src: url("../public/fonts/Fraunces72pt-BlackItalic.ttf") format("truetype");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+
+/* -------------------------------
+   Vogue Sans
+   Use for: luxury navigation, labels, buttons, captions
+-------------------------------- */
+
+@font-face {
+  font-family: "Kaykay Vogue Sans";
+  src: url("../public/fonts/vogue-sans-regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kaykay Vogue Sans";
+  src: url("../public/fonts/vogue-sans-medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kaykay Vogue Sans";
+  src: url("../public/fonts/vogue-sans-semibold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kaykay Vogue Sans";
+  src: url("../public/fonts/vogue-sans-bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+/* -------------------------------
+   Montserrat Variable
+   Use for: UI, body text, forms, booking pages, product pages
+-------------------------------- */
+
+@font-face {
+  font-family: "Kaykay Montserrat";
+  src: url("../public/fonts/Montserrat[wght].ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}

@@ -14,6 +14,9 @@ pnpm dev
 bun dev
 ```
 
+This project uses Chakra UI with Next.js App Router. Run the app with Webpack,
+not Turbopack, to avoid the known Emotion hydration mismatch in development.
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
