@@ -18,13 +18,13 @@ function HeroSlideV0() {
 
         <div className="hero-secondary-title">
             <h2>Luxury Wig Installs</h2>
-            <p>Shot description: Close-up of flawless lace melt, soft baby hairs, glossy black hairline detail.</p>
+            {/* <p>Shot description: Close-up of flawless lace melt, soft baby hairs, glossy black hairline detail.</p> */}
             <Link href="/services">View Services</Link>
         </div>
 
         <div className="hero-secondary-title title-2">
             <h2>CarePlus Beauty Club</h2>
-            <p>Shot description: Woman seated comfortably in salon chair, hair being styled.</p>
+            {/* <p>Shot description: Woman seated comfortably in salon chair, hair being styled.</p> */}
             <Link href="/care-plus">Join CarePlus</Link>
         </div>
 
@@ -152,6 +152,8 @@ const HeroSlideV0Wrapper = styled.div`
     }
 }
 
+
+
 .hero-secondary-title {
     width: min(90%, 300px);
     position: absolute;
@@ -159,7 +161,7 @@ const HeroSlideV0Wrapper = styled.div`
     right: 5%;
     text-align: right;
     color: #222;
-    display: flex;
+    display: none;
     flex-direction: column;
     align-items: flex-end;
 
@@ -179,4 +181,15 @@ const HeroSlideV0Wrapper = styled.div`
 .hero-secondary-title.title-2 {
     top: 50%;
 }
+
+
+@media all and (min-width: 768px) {
+    .hero-main-title {
+    }
+    .hero-secondary-title {
+        display: flex;
+    }
+}
+
+
 `;
