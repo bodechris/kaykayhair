@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 function MainFooter() {
   return (
-    <MainFooterWrapper>MainFooter</MainFooterWrapper>
+    <MainFooterWrapper></MainFooterWrapper>
   )
 }
 
