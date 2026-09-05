@@ -1,9 +1,24 @@
+'use client';
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import styled from "styled-components";
 
+const navItems = [
+  { href: "/", label: "Home" },
+  // { href: "/book", label: "Book Now" },
+  { href: "/services", label: "Services" },
+  { href: "/care-plus", label: "Care Plus" },
+  { href: "/shop", label: "Shop" },
+  { href: "/lookbook", label: "LookBook" },
+  { href: "/befores-and-afters", label: "Befores and Afters" },
+  { href: "/contact", label: "Contact" },
+];
+
 function MainHeader() {
+  const pathname = usePathname();
+
   return (
     <MainHeaderWrapper>
       <div className="main-header-holder">
@@ -14,14 +29,17 @@ function MainHeader() {
         </div>
         <nav className="main-nav" aria-label="Main navigation"> 
           <ul>
-            <li><Link href="/">Home</Link></li>
-            <li><Link href="/book">Book Now</Link></li>
-            <li><Link href="/services">Services</Link></li>
-            <li><Link href="/care-plus">Care Plus</Link></li>
-            <li><Link href="/shop">Shop</Link></li>
-            <li><Link href="/lookbook">LookBook</Link></li>
-            <li><Link href="/befores-and-afters">Befores and Afters</Link></li>
-            <li><Link href="/contact">Contact</Link></li>
+            {navItems.map((item) => {
+              const isActive = item.href === "/" ? pathname === item.href : pathname.startsWith(item.href);
+
+              return (
+                <li key={item.href}>
+                  <Link href={item.href} aria-current={isActive ? "page" : undefined} className={isActive ? "active" : undefined}>
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
         <button className="mobile-menu-toggle" aria-label="Toggle mobile menu">
@@ -48,7 +66,7 @@ const MainHeaderWrapper = styled.header`
   top: 0; left: 0;
 
   z-index: 999;
-  
+
 
   .main-header-holder {
     width: 90%;
@@ -66,6 +84,19 @@ const MainHeaderWrapper = styled.header`
       display: flex;
       justify-content: flex-start;
       align-items: center;
+      position: relative;
+    }
+    .main-logo:before {
+      content: "";
+      position: absolute;
+      width: 300px;
+      height: 150px;
+      background: transparent;
+      top: -300px; left: -20px;
+      isolation: isolate;
+      z-index: -1;
+
+      box-shadow: 0 250px 80px 10px rgba(255, 255, 255, 0.8);
     }
 
     .main-nav {
@@ -91,10 +122,27 @@ const MainHeaderWrapper = styled.header`
 
         li {
           font-weight: 500;
-          // font-family: "Kaykay Vogue Sans", sans-serif;
-          // font-weight: 700;
           font-size: clamp(12px, 1vw, 16px);
-          // letter-spacing: 0.08em;
+        }
+
+        a {
+          display: inline-flex;
+          align-items: center;
+          min-height: 2.25rem;
+          padding: 0 0.4rem;
+          border-radius: 999px;
+          transition: color 160ms ease-in-out, background-color 160ms ease-in-out;
+        }
+
+        a.active {
+          color: #ffffff;
+          background: #171219;
+          padding: 0.2rem 1rem;
+        }
+
+        a:focus-visible {
+          outline: 2px solid #171219;
+          outline-offset: 2px;
         }
       }
     }

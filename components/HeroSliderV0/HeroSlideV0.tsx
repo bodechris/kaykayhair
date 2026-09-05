@@ -1,195 +1,274 @@
-import React from 'react';
+import { PropsWithChildren } from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
+import Image from 'next/image';
+import DesignRegistryRenderer, { type DesignRegistryPayload } from './design-registry';
 
-function HeroSlideV0() {
+type HeroSlideMedia = {
+  fg?: string;
+  bg?: string;
+  alt?: string;
+}
+
+type HeroSlideV0Props = PropsWithChildren & {
+  mainCss?: React.CSSProperties | Record<string, any>;
+  title?: string;
+  mainDesignText?: DesignRegistryPayload;
+  description?: string;
+  primaryCta?: {
+    href: string;
+    label: string;
+  };
+  secondaryCta?: {
+    href: string;
+    label: string;
+  };
+  media?: HeroSlideMedia;
+  priority?: boolean;
+  secondaryDesignText?: DesignRegistryPayload[];
+}
+
+function HeroSlideV0({ children, mainCss, title, mainDesignText, description, primaryCta, secondaryCta, media, priority = false, secondaryDesignText }: HeroSlideV0Props) {
   return (
-    <HeroSlideV0Wrapper>
-        <div className="hero-main-title style-1">
-            <h1>
-                <span className="hl-1">Glow</span>
-                <span>like an</span>
-                <span className="hl-2">African Queen</span>
-                <span>that you are.</span>
-            </h1>
-            <p className="hl-p-1">Premium installs, styling, treatments, makeup, nails and beauty care for women who want to look polished every day.</p>
-            <Link href="/services">Book Your Glow-Up</Link>
+    <HeroSlideV0Wrapper $mainCss={mainCss} data-hero-slide="true">
+
+      {media?.bg ? (
+        <div className="hero-bg-media">
+          <Image
+            src={media.bg}
+            alt={media.alt ?? title ?? 'Hero background'}
+            fill
+            sizes="100vw"
+            priority={priority}
+            aria-hidden="true"
+          />
+        </div>
+      ) : null}
+
+      {/* <div className="hero-overlay" /> */}
+
+      <div className="hero-inner">
+
+        <div className="hero-copy">
+          <DesignRegistryRenderer payload={mainDesignText} />
+
+          {description ? (
+            <p className="hero-description">
+              <span>{description}</span>
+            </p>
+          ) : null}
+          
+          {children}
+          {(primaryCta || secondaryCta) ? (
+            <div className="hero-actions">
+              {primaryCta ? <Link href={primaryCta.href}>{primaryCta.label}</Link> : null}
+              {secondaryCta ? <Link href={secondaryCta.href}>{secondaryCta.label}</Link> : null}
+            </div>
+          ) : null}
+
         </div>
 
-        <div className="hero-secondary-title">
-            <h2>Luxury Wig Installs</h2>
-            {/* <p>Shot description: Close-up of flawless lace melt, soft baby hairs, glossy black hairline detail.</p> */}
-            <Link href="/services">View Services</Link>
-        </div>
+        {media?.fg ? (
+          <div className="hero-media">
+            <Image
+              src={media.fg}
+              alt={media.alt ?? title ?? 'Hero image'}
+              fill
+              sizes="100vw"
+              priority={priority}
+            />
 
-        <div className="hero-secondary-title title-2">
-            <h2>CarePlus Beauty Club</h2>
-            {/* <p>Shot description: Woman seated comfortably in salon chair, hair being styled.</p> */}
-            <Link href="/care-plus">Join CarePlus</Link>
-        </div>
+          </div>
+        ) : null}
 
-        <img src="/images/hero/slide-1-img.webp" alt="KayKay Hair Logo" />
+      </div>
+
+      <div className="hero-secondary-design">
+        {secondaryDesignText?.map((payload, index) => (
+          <div className="hero-secondary-design-item" key={index}>
+            <DesignRegistryRenderer payload={payload} />
+          </div>
+        ))}
+      </div>
     </HeroSlideV0Wrapper> 
   )
 }
 
 export default HeroSlideV0;
 
-const HeroSlideV0Wrapper = styled.div`
+
+type HeroSlideV0WrapperProps = {
+  $mainCss?: React.CSSProperties;
+}
+const HeroSlideV0Wrapper = styled.div<HeroSlideV0WrapperProps>`
   margin: 0 auto;
   width: 100%;
-  height: 100vh;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at center, #ffffff 0%, #fff 10%, #f9e1f7 100%);
+//   background:
+//     radial-gradient(circle at top left, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.75) 32%, rgba(255, 255, 255, 0) 60%),
+//     linear-gradient(135deg, #fff7fb 0%, #fce6f2 45%, #f2d9ee 100%);
   position: relative;
+  isolation: isolate;
+  overflow: hidden;
 
-  img {
+  
+
+  .hero-bg-media {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+    opacity: 0.18;
+    z-index: -3;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .hero-bg-media :global(img) {
+    object-fit: cover;
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.74) 45%, rgba(255, 255, 255, 0.2) 100%);
+    z-index: -2;
+  }
+
+  .hero-inner {
+    width: 90%;
+    align-items: center;
+    gap: clamp(2rem, 5vw, 5rem);    
+  }
+
+  .hero-copy {
+    display: grid;
+    gap: 1.5rem;
+    max-width: 40rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--kh-font-family-sans);
+    font-size: var(--kh-font-size-xs);
+    letter-spacing: var(--kh-letter-spacing-uppercase);
+    text-transform: uppercase;
+    color: var(--kh-color-pink-700);
+  }
+
+  h1 {
+    font-family: var(--kh-font-family-display);
+    font-size: clamp(3.5rem, 9vw, 6.5rem);
+    line-height: 0.9;
+    letter-spacing: var(--kh-letter-spacing-tight);
+    color: #1d1320;
+  }
+
+  .hero-description {
+    max-width: min(400px, 80%);
+    font-size: clamp(1rem, 1.1vw, 1.15rem);
+    line-height: 1.5;
+
+    span {
+      display: inline;
+      padding: 0.3rem 0.5rem;      
+      color: #fff;
+      font-weight: 700;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .hero-actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3.25rem;
+    padding: 0 1.5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(29, 19, 32, 0.12);
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 12px 30px rgba(94, 50, 90, 0.12);
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .hero-actions a:first-child {
+    background: #1d1320;
+    color: #fff;
+  }
+
+  .hero-media {
+    width: 100%;
+    height: 100vh;
+    top: 0; left: 0;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 0;
+
+    img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        object-position: center;
-    }
+      }
 
-.hero-main-title {
-    width: min(90%, 400px);
+  }
+
+  .hero-media :global(img) {
+    object-fit: cover;
+  }
+
+  .hero-secondary-design {
     position: absolute;
-    top: 20%;
-    left: 5%;
-    color: #222;
-
-    h1 {
-        width: 100%;
-        font-family: "Kaykay Fraunces", sans-serif;        
-        font-style: italic;
-        line-height: 0.9;
-        font-weight: 900;
-        display: flex;
-        flex-flow: row wrap;
-        // flex-direction: column;
-        gap: 0.5rem;
-
-        margin-bottom: 40px;
-
-        span {
-          font-size: clamp(1.5rem, 10vw, 3rem);
-          margin-top: 10px;
-        }
-
-        .hl-1 {
-            font-size: clamp(2rem, 10vw, 4rem);
-            color: var(--kh-color-pink-500);
-            margin-top: 0;
-        }
-
-        .hl-2 {
-            font-size: clamp(3rem, 10vw, 6rem);
-             color: var(--kh-color-pink-500);
-             margin-top: 0;
-        }
-    }
-
-    p {
-        width: 100%;
-        font-family: "Kaykay Montserrat", sans-serif;
-        font-weight: 600;
-        font-size: clamp(0.8rem, 2vw, 1.2rem);
-        line-height: 1.2;
-    }
-
-    .hl-p-1 {
-        display: inline; 
-        
-        background-color: #d8315b; 
-        color: #ffffff;
-        
-        padding: 4px 8px;
-        
-        /* 4. Keeps the padding from overlapping vertical lines */
-        box-decoration-break: clone;
-        -webkit-box-decoration-break: clone; /* For Safari support */
-        
-        line-height: 1.6;
-    }
-
-    button, a {
-        width: max-content;
-        height: auto;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #111;
-        color: #ccc;
-        padding: 1rem 2rem;
-        text-decoration: none;
-
-        font-weight: 600;
-        margin-top: 2rem;
-
-        font-size: clamp(0.8rem, 2vw, 1.2rem);
-
-        transform-origin: left center;
-        
-        -webkit-transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        -moz-transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        -ms-transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-
-        -webkit-box-shadow: 0px 20px 5px 2px rgba(0,0,0,0);
-        -moz-box-shadow:    0px 20px 5px 2px rgba(0,0,0,0);
-        box-shadow:         0px 20px 5px 2px rgba(0,0,0,0);
-
-        &:hover {
-            font-size: clamp(1.2rem, 3vw, 1.8rem);
-            background: var(--kh-color-blue-500);
-            color: #fff;
-
-            -webkit-box-shadow: -20px 30px 5px 2px rgba(0,0,0,0.1);
-            -moz-box-shadow:    -20px 30px 5px 2px rgba(0,0,0,0.1);
-            box-shadow:         -20px 30px 5px 2px rgba(0,0,0,0.1);
-        }
-    }
-}
-
-
-
-.hero-secondary-title {
-    width: min(90%, 300px);
-    position: absolute;
-    top: 20%;
-    right: 5%;
-    text-align: right;
-    color: #222;
+    width: 100%;
+    height: 100%;
+    top: 5rem; left: 0;
     display: none;
-    flex-direction: column;
-    align-items: flex-end;
+  }
 
-    h2 {
-        font-weight: 500;
-        font-size: clamp(1.5rem, 5vw, 2.5rem);
-        line-height: 0.9;
-        color: #222;
-        margin-bottom: 20px;
-    }
-    p {
-        font-size: clamp(10px, 2vw, 14px);
-        line-height: 1.6;
-        font-weight: 600;
-    }
-}
-.hero-secondary-title.title-2 {
-    top: 50%;
-}
+  .hero-secondary-design-item {
+    will-change: transform, opacity;
+  }
 
+  @media all and (min-width: 768px) {
+    min-height: auto;
+    padding-top: 7rem;
 
-@media all and (min-width: 768px) {
-    .hero-main-title {
+    .hero-inner {
     }
-    .hero-secondary-title {
+
+    .hero-copy {
+    }
+
+    .hero-media {
+    }
+
+    .hero-secondary-design {
         display: flex;
+        flex-direction: column;
+        top: 15rem;
     }
-}
+  }
 
+
+  ${({ $mainCss }) => $mainCss && { ...$mainCss }}
 
 `;

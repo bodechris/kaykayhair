@@ -4,6 +4,7 @@ import "./globals.css";
 import MainHeader from "@/components/MainHeader";
 import MainFooter from "@/components/MainFooter";
 import { Provider } from "@/components/ui/provider";
+import StyledComponentsRegistry from "@/lib/styled-components-registry";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,13 +29,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Provider>
-          <MainHeader />
-          <main className="main-app">
-            {children}
-          </main>
-          <MainFooter />
-        </Provider>
+        <StyledComponentsRegistry>
+          <Provider>
+            <MainHeader />
+            <main className="main-app">
+              {children}
+            </main>
+            <MainFooter />
+          </Provider>
+        </StyledComponentsRegistry>
       </body>
     </html>
   );
