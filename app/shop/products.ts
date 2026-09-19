@@ -23,37 +23,123 @@ const art = (label: string, color: string, accent: string, angle = 0) => {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
 }
 
+
 export const products: ShopProduct[] = [
   {
     id: "bob-wigs", name: "Bob Wig", category: "Wigs", basePrice: 3000,
-    description: "A polished, ready-to-wear lace bob with a natural hairline and effortless movement.",
-    details: "Made for everyday confidence, this unit arrives prepared for a clean, flattering finish. Choose your preferred length, colour and cap construction; the price updates as you build your unit.",
-    discount: { enabled: true, percentage: 10 }, tag: "Best seller",
-    features: ["Natural-looking lace", "Soft body movement", "Ready-to-wear finish"],
+    description: "A polished, ready-to-wear lace bob crafted for a sleek, sophisticated look with a natural-looking hairline and beautiful, effortless movement.",
+    details: "Our Bob Wig is the perfect blend of elegance and versatility. Designed to give you a flawless, salon-finished look, it’s perfect for everyday wear, special occasions, or elevating your professional style. Easy to wear, timeless, and effortlessly chic.",
+    // discount: { enabled: true, percentage: 10 }, 
+    tag: "Best seller",
+    features: ["Natural-looking lace", "Soft", "luxurious movement", "Ready-to-wear finish", "Sleek and sophisticated style", "Versatile for any occasion"],
     images: [
-      { src: art("Front", "#f4dfd8", "#d69a8b", -5), alt: "Lace Glow Bob Wig front view" },
-      { src: art("Side", "#efe1d4", "#b98372", 8), alt: "Lace Glow Bob Wig side view" },
-      { src: art("Detail", "#f8ece8", "#d9aca0", -12), alt: "Lace Glow Bob Wig lace detail" },
+      { src: "/images/shop/bob-wigs/bob-wig-10-inches-vietnamese-hair.webp", alt: "" },
+      { src: "/images/shop/bob-wigs/ombre-bob-wig-10-inches-vietnamese-hair.webp", alt: "" },
+      { src: "/images/shop/bob-wigs/natural-10-inches-frontal-bob-vietnamese-hair.webp", alt: "" },
     ],
-    options: [
-      { name: "Length", required: true, values: [{ label: "10 in" }, { label: "12 in", priceAdjustment: 450 }, { label: "14 in", priceAdjustment: 850 }] },
-      { name: "Colour", values: [{ label: "Natural black", swatch: "#171313" }, { label: "Chocolate", priceAdjustment: 250, swatch: "#5d3829" }, { label: "Burgundy", priceAdjustment: 300, swatch: "#6d1834" }] },
-      { name: "Cap type", values: [{ label: "Standard" }, { label: "Glueless", priceAdjustment: 650 }] },
-      { name: "Cap size", values: [{ label: "Standard" }, { label: "Small: 21–21.5 in", priceAdjustment: 250 }, { label: "Medium: 22–22.5 in", priceAdjustment: 350 }, { label: "Large: 23–23.5 in", priceAdjustment: 450 }] },
-      { name: "Largeness", values: [{ label: "Large 1" }, { label: "Large 2", priceAdjustment: 150 }] },
-    ],
+    options:  [
+  {
+    name: "Length",
+    required: true,
+    values: [
+      { label: "10 in" },
+      { label: "12 in", priceAdjustment: 450 },
+      { label: "14 in", priceAdjustment: 850 }
+    ]
+  },
+  {
+    name: "Colour",
+    values: [
+      { label: "Natural Black", swatch: "#171313" },
+      { label: "Chocolate Brown", priceAdjustment: 250, swatch: "#5d3829" },
+      { label: "Burgundy", priceAdjustment: 300, swatch: "#6d1834" },
+      { label: "Blonde", priceAdjustment: 500, swatch: "#a06313" },
+    ]
+  },
+  {
+    name: "Cap Type",
+    values: [
+      { label: "Standard" },
+      { label: "Glueless", priceAdjustment: 650 }
+    ]
+  },
+  {
+    name: "Cap Size",
+    values: [
+      { label: "Standard" },
+      { label: "Small (21–21.5 in)", priceAdjustment: 250 },
+      { label: "Medium (22–22.5 in)", priceAdjustment: 350 },
+      { label: "Large (23–23.5 in)", priceAdjustment: 450 }
+    ]
+  },
+],
   },
   {
     id: "pixie-wigs", name: "Pixie Wigs", category: "Wigs", basePrice: 3500,
     description: "A nourishing shampoo and treatment pairing for softness, moisture and easier styling.",
     details: "A gentle wash-day duo for natural hair, extensions and wigs. Use the cleanser first, then follow with the rich treatment for a soft, manageable finish.",
-    discount: { enabled: true, percentage: 15 }, tag: "Care essential",
+    // discount: { enabled: true, percentage: 15 }, 
+    tag: "Care essential",
     features: ["Two-piece routine", "Hydrating formula", "Salon approved"],
     images: [
       { src: art("Duo", "#e7eee8", "#a5bea7", -4), alt: "Moisture Reset Duo set" },
       { src: art("Cleanse", "#eef3ed", "#bdcdbd", 7), alt: "Moisture Reset cleanser" },
       { src: art("Treat", "#e0eae1", "#91aa94", -9), alt: "Moisture Reset treatment" },
     ],
+    options: [
+      {
+        name: "Length",
+        required: true,
+        values: [
+          { label: "18 inches" }
+        ]
+      },
+      {
+        name: "Curl Pattern",
+        required: true,
+        values: [
+          { label: "Curly" }
+        ]
+      },
+      {
+        name: "Colour",
+        values: [
+          { label: "Natural Black", swatch: "#171313" },
+          { label: "Chocolate Brown", priceAdjustment: 250, swatch: "#5d3829" },
+          { label: "Burgundy", priceAdjustment: 300, swatch: "#6d1834" }
+        ]
+      },
+      {
+        name: "Closure",
+        required: true,
+        values: [
+          { label: "5×5 Closure" }
+        ]
+      },
+      {
+        name: "Weight",
+        required: true,
+        values: [
+          { label: "220g" }
+        ]
+      },
+      {
+        name: "Cap Type",
+        values: [
+          { label: "Standard" },
+          { label: "Glueless", priceAdjustment: 650 }
+        ]
+      },
+      {
+        name: "Cap Size",
+        values: [
+          { label: "Standard" },
+          { label: "Small (21–21.5 in)", priceAdjustment: 250 },
+          { label: "Medium (22–22.5 in)", priceAdjustment: 350 },
+          { label: "Large (23–23.5 in)", priceAdjustment: 450 }
+        ]
+      }
+    ]
   },
   {
     id: "straight-hair-wigs", name: "Straight Hair Wigs", category: "Wigs", basePrice: 4500,
