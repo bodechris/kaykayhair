@@ -5,7 +5,7 @@ type KaykayServiceImage = {
 
 export type KaykayServiceSlug = | 'braiding' | 'bridal-event-hair' | 'hair-care' | 'wig-revamping-installations' | 'cornrows' | 'makeup' | 'pedicure-manicure';
 
-type KaykaySubService = {
+export type KaykaySubService = {
   name: string;
   slug: string;
   description: string;
@@ -18,7 +18,7 @@ type KaykaySubService = {
   images: KaykayServiceImage[];
 };
 
-type KaykayService = {
+export type KaykayService = {
   title: string;
   slug: KaykayServiceSlug;
   eyebrow: string;

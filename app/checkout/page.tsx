@@ -14,9 +14,26 @@ type CheckoutLine = {
 
 const steps = ["Your details", "Delivery", "Payment"]
 
-function TextField({ label, type = "text", placeholder }: { label: string; type?: string; placeholder?: string }) {
+function TextField({
+  label,
+  type = "text",
+  placeholder,
+  autoComplete,
+  inputMode,
+  maxLength,
+  hint,
+}: {
+  label: string
+  type?: string
+  placeholder?: string
+  autoComplete?: string
+  inputMode?: "text" | "email" | "tel" | "numeric" | "decimal" | "search" | "url" | "none"
+  maxLength?: number
+  hint?: string
+}) {
   return <Field.Root required><Field.Label fontWeight="750" fontSize="sm">{label}<Field.RequiredIndicator /></Field.Label>
-    <Input type={type} placeholder={placeholder} minH="13" px="4.5" rounded="xl" borderColor="blackAlpha.200" bg="white" _focus={{ borderColor: "#dc355f", boxShadow: "0 0 0 1px #dc355f" }} />
+    <Input type={type} placeholder={placeholder} autoComplete={autoComplete} inputMode={inputMode} maxLength={maxLength} minH="13" px="4.5" rounded="xl" borderColor="blackAlpha.200" bg="white" _focus={{ borderColor: "var(--kh-color-primary)", boxShadow: "0 0 0 1px var(--kh-color-primary)" }} />
+    {hint ? <Field.HelperText color="blackAlpha.600">{hint}</Field.HelperText> : null}
   </Field.Root>
 }
 
@@ -69,8 +86,8 @@ export default function CheckoutPage() {
           </Steps.List>
 
           <Steps.Content index={0}><VStack align="stretch" gap="6">
-            <SimpleGrid columns={{ base: 1, md: 2 }} gap="5"><TextField label="First name" placeholder="Your first name" /><TextField label="Last name" placeholder="Your last name" /></SimpleGrid>
-            <TextField label="Email address" type="email" placeholder="you@example.com" /><TextField label="Mobile number" type="tel" placeholder="+27" />
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap="5"><TextField label="First name" placeholder="e.g. Kaykay" autoComplete="given-name" /><TextField label="Last name" placeholder="e.g. Mokoena" autoComplete="family-name" /></SimpleGrid>
+            <TextField label="Email address" type="email" placeholder="name@example.com" autoComplete="email" inputMode="email" /><TextField label="Mobile number" type="tel" placeholder="+27 71 234 5678" autoComplete="tel" inputMode="tel" hint="Use the number where delivery updates can reach you." />
           </VStack></Steps.Content>
 
           <Steps.Content index={1}><VStack align="stretch" gap="6">
@@ -83,13 +100,13 @@ export default function CheckoutPage() {
                 <Box><Text fontWeight="850">Salon collection</Text><Text fontWeight="400" color="blackAlpha.600" mt="1">We’ll let you know when it’s ready · Free</Text></Box>
               </Button>
             </SimpleGrid>
-            {delivery === "standard" && <><TextField label="Street address" placeholder="Street and number" /><SimpleGrid columns={{ base: 1, md: 2 }} gap="5"><TextField label="City" placeholder="Johannesburg" /><TextField label="Postal code" placeholder="2194" /></SimpleGrid></>}
+            {delivery === "standard" && <><TextField label="Street address" placeholder="Street number and street name" autoComplete="street-address" /><SimpleGrid columns={{ base: 1, md: 2 }} gap="5"><TextField label="City" placeholder="e.g. Johannesburg" autoComplete="address-level2" /><TextField label="Postal code" placeholder="e.g. 2194" autoComplete="postal-code" inputMode="numeric" maxLength={10} /></SimpleGrid></>}
           </VStack></Steps.Content>
 
           <Steps.Content index={2}><VStack align="stretch" gap="6">
             <Box border="2px solid" borderColor="#dc355f" rounded="2xl" p={{ base: "5", md: "6" }}><Flex justify="space-between" gap="4"><Box><Text fontWeight="850">Secure card payment</Text><Text color="blackAlpha.600" mt="1">Visa, Mastercard and supported debit cards</Text></Box><Text fontSize="xl">••••</Text></Flex></Box>
-            <TextField label="Name on card" placeholder="Name exactly as shown" /><TextField label="Card number" placeholder="0000 0000 0000 0000" />
-            <SimpleGrid columns={2} gap="5"><TextField label="Expiry" placeholder="MM / YY" /><TextField label="CVV" placeholder="123" /></SimpleGrid>
+            <TextField label="Name on card" placeholder="Name exactly as shown" autoComplete="cc-name" /><TextField label="Card number" placeholder="0000 0000 0000 0000" autoComplete="cc-number" inputMode="numeric" maxLength={19} />
+            <SimpleGrid columns={2} gap="5"><TextField label="Expiry" placeholder="MM / YY" autoComplete="cc-exp" inputMode="numeric" maxLength={7} /><TextField label="CVV" placeholder="123" autoComplete="cc-csc" inputMode="numeric" maxLength={4} /></SimpleGrid>
             <Text fontSize="sm" color="blackAlpha.600" lineHeight="1.6">Payment fields are ready for your payment provider. No card data is stored by this interface.</Text>
           </VStack></Steps.Content>
 

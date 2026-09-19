@@ -1,15 +1,31 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import PageMenuPlaceholder from '@/components/PageMenuPlaceholder';
 import { kaykayServices, KaykayServiceSlug } from "./services";
 import styled from 'styled-components';
 import BookingFormV0Tray from '@/components/booking/BookingFormV0Tray';
+import BookingFormV0Manager from '@/components/booking/BookingFormV0Manager';
 
 
 export default function ServicesPage() {
+  const searchParams = useSearchParams();
   const [selectedServices, setSelectedServices] = useState<KaykayServiceSlug[]>([]);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [initialVariantByService, setInitialVariantByService] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const requestedService = searchParams.get('service') as KaykayServiceSlug | null;
+    if (!requestedService) return;
+    const exists = kaykayServices.some((service) => service.slug === requestedService);
+    if (!exists) return;
+    setSelectedServices((current) => current.includes(requestedService) ? current : [requestedService]);
+    const requestedVariant = searchParams.get('variant');
+    if (requestedVariant) setInitialVariantByService({ [requestedService]: requestedVariant });
+    setBookingOpen(true);
+  }, [searchParams]);
 
   // function to toggle booking item selection
   const toggleBookItemSelection = ( slug: KaykayServiceSlug ) => {
@@ -24,13 +40,11 @@ export default function ServicesPage() {
     });
   }
 
-  useEffect(() => {
-    console.log( selectedServices );
-  }, [ selectedServices ]);
 
   return (
     <>
-      <BookingFormV0Tray selectedServices={ selectedServices } />
+      <BookingFormV0Manager open={bookingOpen} onOpenChange={setBookingOpen} selectedServices={selectedServices} initialVariantByService={initialVariantByService} />
+      <BookingFormV0Tray selectedServices={ selectedServices } onContinue={() => setBookingOpen(true)} />
       <PageMenuPlaceholder title="Services" width="90%">
         <BookingItemWrapper aria-label="Kaykay Hair services">
           {
@@ -70,7 +84,7 @@ export default function ServicesPage() {
                       aria-describedby={itm.description ? descriptionId : undefined}
                       onClick={() => toggleBookItemSelection(itm.slug)}
                     >
-                      Select this service
+                      {selected ? 'Remove service' : 'Select this service'}
                     </button>
                   </div>
 

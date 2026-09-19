@@ -4,7 +4,9 @@ import "./globals.css";
 import MainHeader from "@/components/MainHeader";
 import MainFooter from "@/components/MainFooter";
 import { Provider } from "@/components/ui/provider";
+import { Toaster } from "@/components/ui/toaster";
 import StyledComponentsRegistry from "@/lib/styled-components-registry";
+import WhatsAppChatButton from "@/components/WhatsAppChatButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +38,8 @@ export default function RootLayout({
               {children}
             </main>
             <MainFooter />
+            <WhatsAppChatButton />
+            <Toaster />
           </Provider>
         </StyledComponentsRegistry>
       </body>

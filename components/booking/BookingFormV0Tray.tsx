@@ -1,155 +1,149 @@
-import React from 'react';
-import styled from 'styled-components';
-import { kaykayServices, KaykayServiceSlug } from "../../app/services/services";
+"use client"
+
+import React from "react"
+import styled from "styled-components"
+import { kaykayServices, type KaykayServiceSlug } from "../../app/services/services"
+import { formatZar } from "./booking-config"
 
 type BookingFormV0TrayProps = {
-    selectedServices: string[]
+  selectedServices: KaykayServiceSlug[]
+  onContinue: () => void
 }
-function BookingFormV0Tray({ selectedServices = [] }: BookingFormV0TrayProps) {
+
+export default function BookingFormV0Tray({ selectedServices = [], onContinue }: BookingFormV0TrayProps) {
+  const selected = selectedServices
+    .map((slug) => kaykayServices.find((service) => service.slug === slug))
+    .filter(Boolean)
+  const fromTotal = selected.reduce((sum, item) => sum + (item?.fromPrice ?? 0), 0)
+  const hasSelection = selected.length > 0
+
   return (
-    <BookingFormV0TrayWrapper>
-        <div className="booking-form-tray__content">
-            <div className={`selected-items-badge ${ selectedServices.length > 0 ? 'selections-available' : ''}`} role="banner" title={`You've selected ${selectedServices.length} services to book. Click on 'Complete booking to book the services`}>{ selectedServices.length }</div>
-            <div className="booking-form-tray__selected-services">
-            {
-                selectedServices.map((v, i) => {
-                    const itm = kaykayServices.find((u) => u.slug === v);
-                    const imgsrc = itm?.images[0]?.src || "";
-                    const imgalt = itm?.images[0]?.alt || "";
-                    if( !itm ) return null;
-                    const title = itm.title;
-                    return <div key={i} title={ title } className="preview-selected-item" style={{ transform: `translate(${i * 3}px, ${i * 1}px) rotate(${i * 25}deg)`, zIndex: 100 - i }}>
-                        <img src={imgsrc} alt={imgalt} />
-                    </div>
-                })
-            }
-            </div>
-            <button>Complete booking</button>
+    <BookingFormV0TrayWrapper aria-live="polite">
+      <div className="booking-form-tray__content">
+        <div className={`selected-items-badge ${hasSelection ? "selections-available" : ""}`} aria-label={`${selected.length} selected services`}>
+          {selected.length}
         </div>
+        <div className="booking-form-tray__selected-services" aria-hidden="true">
+          {selected.slice(0, 4).map((item, i) => {
+            if (!item) return null
+            const image = item.images[0]
+            return (
+              <div
+                key={item.slug}
+                title={item.title}
+                className="preview-selected-item"
+                style={{ transform: `translate(${i * 10}px, ${i * 1}px) rotate(${i * 8 - 10}deg)`, zIndex: 100 - i }}
+              >
+                {image?.src ? <img src={image.src} alt="" /> : null}
+              </div>
+            )
+          })}
+        </div>
+        <button type="button" onClick={onContinue} disabled={!hasSelection}>
+          <span>{hasSelection ? `${selected.length} service${selected.length === 1 ? "" : "s"} · from ${formatZar(fromTotal)}` : "Select a service"}</span>
+          <strong>{hasSelection ? "Continue booking" : "Browse services"}</strong>
+        </button>
+      </div>
     </BookingFormV0TrayWrapper>
   )
 }
 
-export default BookingFormV0Tray
-
 const BookingFormV0TrayWrapper = styled.footer`
-margin: 0 auto;
-width: 100%;
-height: 100px;
-bottom: 0;
-left: 0;
-position: fixed;
-display: flex;
-align-items: center;
-justify-content: center;
-z-index: 99;
-pointer-events: none;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 108px;
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  pointer-events: none;
+  padding: 12px;
 
-.booking-form-tray__content {
+  .booking-form-tray__content {
     pointer-events: all;
-    background: #fff;
-    border: 0.5px solid #eee;
-    border-radius: 4rem;
-    width: min( 350px, 90% );
-    height: auto;
-    padding: 0.5rem;
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(18px);
+    border: 1px solid #e9e9e9;
+    border-radius: 999px;
+    width: min(520px, 96vw);
+    min-height: 76px;
+    padding: 8px 8px 8px 14px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
     position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.16);
+  }
 
-    -webkit-box-shadow: 0px 30px 60px 2px rgba(0,0,0,0.3);
-    -moz-box-shadow:    0px 30px 60px 2px rgba(0,0,0,0.3);
-    box-shadow:         0px 30px 60px 2px rgba(0,0,0,0.3); 
+  .selected-items-badge {
+    width: 26px;
+    height: 26px;
+    position: absolute;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    top: -4px;
+    left: 2px;
+    z-index: 10;
+    background: #eee;
+    color: #222;
+    font-size: 10px;
+    font-weight: 800;
 
-    -webkit-transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    -moz-transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    -ms-transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-
-    .selected-items-badge {
-      width: 30px;
-      height: 30px;
-      position: absolute;
-      border-radius: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      top: 0; left: 0;
-      overflow: hidden;
-      z-index: 10;
-      background: #eee;
-      color: #222;
-      font-size: clamp(8px, 2vw, 10px);
-      font-weight: bolder;
-
-      -webkit-transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      -moz-transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      -ms-transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      
-      &.selections-available {
-        background: #f00;
-        color: #f7f7f7;
-      }
+    &.selections-available {
+      background: #dd3f6f;
+      color: white;
     }
+  }
 
-    .booking-form-tray__selected-services {
-      position: relative;
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+  .booking-form-tray__selected-services {
+    position: relative;
+    width: 86px;
+    height: 44px;
+    flex: 0 0 86px;
+
+    .preview-selected-item {
+      width: 40px;
       height: 40px;
+      position: absolute;
+      top: 2px;
+      left: 10px;
+      border-radius: 12px;
+      border: 2px solid #fff;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+      overflow: hidden;
 
-      .preview-selected-item {
-        width: 30px;
-        height: 30px;
-        position: absolute;
-        top: 0; left: 20%;
-        border-radius: 10px;
-        border: 2px solid #fff;
-        -webkit-box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.03);
-        -moz-box-shadow:    0px 10px 15px 2px rgba(0,0,0,0.03);
-        box-shadow:         0px 10px 15px 2px rgba(0,0,0,0.03); 
-
-        transform-origin: center center;
-        overflow: hidden;
-        z-index: 0;
-
-        img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-      }
-    
+      img { width: 100%; height: 100%; object-fit: cover; }
     }
+  }
 
-    button {
-        flex: 2;
-        width: max-content;
-        border: 0.5px solid #f7f7f7;
-        border-radius: 2rem;
-        background: #333;
-        color: #ddd;
-    
-        padding: 1rem 2rem;
-    
-        font-weight: bolder;
-        z-index: 10;
-    
-        -webkit-transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        -moz-transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        -ms-transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
+  button {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    border-radius: 999px;
+    background: #1d1d1f;
+    color: #fff;
+    min-height: 58px;
+    padding: 9px 22px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 180ms ease, background 180ms ease;
 
-    button:hover {      
-      background: #111;
-      color: #fff;
-    }
+    span { font-size: 10px; opacity: 0.7; font-weight: 600; }
+    strong { font-size: 13px; margin-top: 2px; }
 
-}
+    &:hover:not(:disabled) { background: #000; transform: translateY(-1px); }
+    &:disabled { background: #efefef; color: #777; cursor: default; }
+  }
 
-`;
+  @media (max-width: 560px) {
+    .booking-form-tray__selected-services { width: 62px; flex-basis: 62px; }
+    button { padding-inline: 16px; }
+  }
+`

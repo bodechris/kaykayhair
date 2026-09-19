@@ -1,1175 +1,635 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type * as React from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import styled from "styled-components";
-
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Badge,
+  Box,
+  Button,
+  Flex,
+  Heading,
+  HStack,
+  IconButton,
+  Image,
+  SimpleGrid,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
 import PageMenuPlaceholder from "@/components/PageMenuPlaceholder";
+import { toaster } from "@/components/ui/toaster";
+import {
+  emptyTransformationState,
+  TRANSFORMATION_STORAGE_KEY,
+  transformationCategories,
+  transformations,
+  type SavedTransformationState,
+  type Transformation,
+  type TransformationCategory,
+} from "@/lib/transformations";
 
-type BeforeAfterCategory = "All" | "Wigs" | "Braids" | "Care" | "Bridal" | "Makeup";
-
-type BeforeAfterJob = {
-  id: string;
-  category: Exclude<BeforeAfterCategory, "All">;
-  title: string;
-  caption: string;
-  description: string;
-  service: string;
-  duration: string;
-  resultNote: string;
-  beforeImage: string;
-  afterImage: string;
-};
-
-type BeforeAfterResponse = {
-  items: BeforeAfterJob[];
-  nextCursor: number | null;
-  hasMore: boolean;
-};
-
-const categories: BeforeAfterCategory[] = ["All", "Wigs", "Braids", "Care", "Bridal", "Makeup"];
-const BATCH_SIZE = 3;
-
-const localBeforeAfterJobs: BeforeAfterJob[] = [
-  {
-    id: "lace-reset-glow",
-    category: "Wigs",
-    title: "Lace Reset Glow",
-    caption: "From tired lace to a soft, natural hairline finish.",
-    description:
-      "A clean wig reset focused on lace correction, melt, shaping, and a soft salon finish that looks polished without feeling heavy.",
-    service: "Wig revamp + installation",
-    duration: "2h 30m",
-    resultNote: "Soft melt, cleaner hairline, fuller frame",
-    beforeImage:
-      "https://images.unsplash.com/photo-1595475207225-428b62bda831?auto=format&fit=crop&w=1800&q=90",
-    afterImage:
-      "https://images.unsplash.com/photo-1594736797933-d0501ba2fe65?auto=format&fit=crop&w=1800&q=90",
-  },
-  {
-    id: "knotless-crown-flow",
-    category: "Braids",
-    title: "Knotless Crown Flow",
-    caption: "A protective look rebuilt with clean parting and easy movement.",
-    description:
-      "A braid transformation designed for comfort, longevity, and a softer face frame while keeping the final look neat and premium.",
-    service: "Knotless braids",
-    duration: "4h 15m",
-    resultNote: "Lightweight fall, neat sections, polished edges",
-    beforeImage:
-      "https://images.unsplash.com/photo-1595959183082-7b570b7e08e2?auto=format&fit=crop&w=1800&q=90",
-    afterImage:
-      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1800&q=90",
-  },
-  {
-    id: "careplus-silk-reset",
-    category: "Care",
-    title: "CarePlus Silk Reset",
-    caption: "Healthy hair brought back to a softer, more manageable state.",
-    description:
-      "A maintenance-led treatment with wash, conditioning, gentle heat styling, and finishing care for clients who want consistency month after month.",
-    service: "CarePlus treatment",
-    duration: "1h 45m",
-    resultNote: "Less dryness, more softness, better shine",
-    beforeImage:
-      "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1800&q=90",
-    afterImage:
-      "https://images.unsplash.com/photo-1512316609839-ce289d3eba0a?auto=format&fit=crop&w=1800&q=90",
-  },
-  {
-    id: "bridal-soft-sculpt",
-    category: "Bridal",
-    title: "Bridal Soft Sculpt",
-    caption: "A calm, camera-ready finish for a high-emotion day.",
-    description:
-      "An event beauty transformation built around soft structure, controlled volume, and a timeless profile that holds beautifully in photos.",
-    service: "Bridal and event hair",
-    duration: "3h",
-    resultNote: "Romantic volume, clean shape, picture-ready polish",
-    beforeImage:
-      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1800&q=90",
-    afterImage:
-      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1800&q=90",
-  },
-  {
-    id: "soft-glam-lift",
-    category: "Makeup",
-    title: "Soft Glam Lift",
-    caption: "Fresh skin, defined features, and a confident finish.",
-    description:
-      "A minimal glam direction for working women, birthdays, shoots, and events where the beauty should feel refined instead of overdone.",
-    service: "Makeup application",
-    duration: "1h 20m",
-    resultNote: "Clean skin, lifted eye, soft glow",
-    beforeImage:
-      "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1800&q=90",
-    afterImage:
-      "https://images.unsplash.com/photo-1523264766116-1e09b3145b84?auto=format&fit=crop&w=1800&q=90",
-  },
-  {
-    id: "wig-volume-rebuild",
-    category: "Wigs",
-    title: "Volume Rebuild",
-    caption: "A flat wig reshaped into a fuller, more luxurious silhouette.",
-    description:
-      "A revamp and restyle that restores shape, movement, and confidence through wash care, heat styling, trimming, and finishing detail.",
-    service: "Wig revamping",
-    duration: "2h",
-    resultNote: "More movement, refreshed ends, stronger silhouette",
-    beforeImage:
-      "https://images.unsplash.com/photo-1605980776566-0486c3ac7617?auto=format&fit=crop&w=1800&q=90",
-    afterImage:
-      "https://images.unsplash.com/photo-1544717305-996b815c338c?auto=format&fit=crop&w=1800&q=90",
-  },
-  {
-    id: "cornrow-clean-line",
-    category: "Braids",
-    title: "Clean Line Cornrows",
-    caption: "A protective style made sharper through clean lines and balance.",
-    description:
-      "Cornrows shaped for a neat everyday look with attention to symmetry, scalp comfort, and a finish that feels fresh for longer.",
-    service: "Cornrows",
-    duration: "2h 15m",
-    resultNote: "Sharper lines, balanced sections, tidy finish",
-    beforeImage:
-      "https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&w=1800&q=90",
-    afterImage:
-      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=1800&q=90",
-  },
-  {
-    id: "repair-and-polish",
-    category: "Care",
-    title: "Repair and Polish",
-    caption: "A dry, stressed look softened through treatment-first styling.",
-    description:
-      "A hair care session that prioritizes moisture, detangling, shine, and a clean final shape before any heavy styling decisions.",
-    service: "Hair care treatment",
-    duration: "1h 30m",
-    resultNote: "Softer texture, calmer finish, healthier look",
-    beforeImage:
-      "https://images.unsplash.com/photo-1605980776566-0486c3ac7617?auto=format&fit=crop&w=1800&q=90",
-    afterImage:
-      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1800&q=90",
-  },
-  {
-    id: "event-face-frame",
-    category: "Bridal",
-    title: "Event Face Frame",
-    caption: "A simple event upgrade with softness around the face.",
-    description:
-      "A beauty finish created for women who want an elevated look that still feels like themselves when they walk into the room.",
-    service: "Event hair styling",
-    duration: "2h",
-    resultNote: "Soft frame, gentle lift, graceful finish",
-    beforeImage:
-      "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1800&q=90",
-    afterImage:
-      "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?auto=format&fit=crop&w=1800&q=90",
-  },
-  {
-    id: "everyday-glam-edit",
-    category: "Makeup",
-    title: "Everyday Glam Edit",
-    caption: "An understated beauty shift for everyday confidence.",
-    description:
-      "A soft, clean makeup look for clients who want polish, glow, and definition without losing the natural feel of their face.",
-    service: "Soft glam makeup",
-    duration: "1h",
-    resultNote: "Fresh complexion, subtle definition, natural glow",
-    beforeImage:
-      "https://images.unsplash.com/photo-1512316609839-ce289d3eba0a?auto=format&fit=crop&w=1800&q=90",
-    afterImage:
-      "https://images.unsplash.com/photo-1495385794356-15371f348c31?auto=format&fit=crop&w=1800&q=90",
-  },
-  {
-    id: "premium-install-polish",
-    category: "Wigs",
-    title: "Premium Install Polish",
-    caption: "A high-finish install with clean styling and a smooth shape.",
-    description:
-      "A premium wig session that balances lace work, placement, finishing, and client comfort for a refined Kaykay Hair result.",
-    service: "Premium wig installation",
-    duration: "2h 45m",
-    resultNote: "Natural lace, soft volume, polished finish",
-    beforeImage:
-      "https://images.unsplash.com/photo-1523264766116-1e09b3145b84?auto=format&fit=crop&w=1800&q=90",
-    afterImage:
-      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1800&q=90",
-  },
-  {
-    id: "maintenance-refresh",
-    category: "Care",
-    title: "Maintenance Refresh",
-    caption: "A routine beauty reset for clients who want to stay ready.",
-    description:
-      "A maintenance-focused session for regular clients: clean care, light styling, finish check, and an easy route back to a polished look.",
-    service: "Monthly care maintenance",
-    duration: "1h 50m",
-    resultNote: "Cleaner routine, better shape, ready-to-go finish",
-    beforeImage:
-      "https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&w=1800&q=90",
-    afterImage:
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1800&q=90",
-  },
-];
-
-function getLocalBatch(cursor: number, category: BeforeAfterCategory): BeforeAfterResponse {
-  const list = category === "All" ? localBeforeAfterJobs : localBeforeAfterJobs.filter((item) => item.category === category);
-  const items = list.slice(cursor, cursor + BATCH_SIZE);
-  const nextCursor = cursor + BATCH_SIZE < list.length ? cursor + BATCH_SIZE : null;
-
-  return {
-    items,
-    nextCursor,
-    hasMore: nextCursor !== null,
-  };
-}
-
-async function fetchBeforeAfterBatch(cursor: number, category: BeforeAfterCategory): Promise<BeforeAfterResponse> {
-  const params = new URLSearchParams({
-    cursor: String(cursor),
-    limit: String(BATCH_SIZE),
-    category,
-  });
-
+function readState(): SavedTransformationState {
+  if (typeof window === "undefined") return emptyTransformationState;
   try {
-    const response = await fetch(`/api/befores-and-afters?${params.toString()}`, {
-      cache: "no-store",
-    });
-
-    if (response.ok) {
-      return (await response.json()) as BeforeAfterResponse;
-    }
+    const parsed = JSON.parse(
+      window.localStorage.getItem(TRANSFORMATION_STORAGE_KEY) || "{}",
+    ) as Partial<SavedTransformationState>;
+    return {
+      loved: Array.isArray(parsed.loved) ? parsed.loved : [],
+      saved: Array.isArray(parsed.saved) ? parsed.saved : [],
+    };
   } catch {
-    // Falls back to the local dataset below when the API route has not been added yet.
+    return emptyTransformationState;
   }
-
-  await new Promise((resolve) => setTimeout(resolve, 420));
-  return getLocalBatch(cursor, category);
 }
 
-function getPointerPercent(event: PointerEvent | React.PointerEvent<HTMLElement>, element: HTMLElement) {
-  const bounds = element.getBoundingClientRect();
-  const raw = ((event.clientX - bounds.left) / bounds.width) * 100;
-  return Math.min(92, Math.max(8, raw));
+function saveState(state: SavedTransformationState) {
+  window.localStorage.setItem(TRANSFORMATION_STORAGE_KEY, JSON.stringify(state));
 }
 
-function CompareSlider({ job, index }: { job: BeforeAfterJob; index: number }) {
-  const compareRef = useRef<HTMLDivElement | null>(null);
-  const [split, setSplit] = useState(50);
-  const [isDragging, setIsDragging] = useState(false);
-
-  const updateFromPointer = useCallback((event: PointerEvent | React.PointerEvent<HTMLElement>) => {
-    if (!compareRef.current) return;
-    setSplit(getPointerPercent(event, compareRef.current));
-  }, []);
-
-  const handlePointerDown = (event: React.PointerEvent<HTMLElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setIsDragging(true);
-    updateFromPointer(event);
-  };
-
-  const handlePointerMove = (event: React.PointerEvent<HTMLElement>) => {
-    if (!isDragging) return;
-    updateFromPointer(event);
-  };
-
-  const handlePointerEnd = (event: React.PointerEvent<HTMLElement>) => {
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    setIsDragging(false);
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      setSplit((value) => Math.max(8, value - 4));
-    }
-
-    if (event.key === "ArrowRight") {
-      event.preventDefault();
-      setSplit((value) => Math.min(92, value + 4));
-    }
-
-    if (event.key === "Home") {
-      event.preventDefault();
-      setSplit(8);
-    }
-
-    if (event.key === "End") {
-      event.preventDefault();
-      setSplit(92);
-    }
-  };
+function BeforeAfterSlider({ item }: { item: Transformation }) {
+  const [position, setPosition] = useState(50);
 
   return (
-    <CompareWrap
-      ref={compareRef}
-      $isDragging={isDragging}
-      style={{ "--split": `${split}%` } as React.CSSProperties}
-      role="group"
-      aria-label={`${job.title} before and after comparison`}
+    <Box
+      position="relative"
+      overflow="hidden"
+      rounded={{ base: "28px", md: "34px" }}
+      bg="blackAlpha.100"
+      aspectRatio={{ base: "4 / 5", md: "16 / 11" }}
+      userSelect="none"
+      sx={{ "&:focus-within": { boxShadow: "0 0 0 4px var(--kh-color-pink-100)" } }}
     >
-      <ImageLayer>
-        <img src={job.beforeImage} alt={`${job.title} before`} loading={index < 2 ? "eager" : "lazy"} />
-      </ImageLayer>
+      <Image
+        src={item.beforeImage}
+        alt={`${item.title} before`}
+        position="absolute"
+        inset="0"
+        w="100%"
+        h="100%"
+        objectFit="cover"
+        draggable={false}
+      />
 
-      <AfterLayer aria-hidden="true">
-        <img src={job.afterImage} alt="" loading={index < 2 ? "eager" : "lazy"} />
-      </AfterLayer>
+      <Image
+        src={item.afterImage}
+        alt={`${item.title} after`}
+        position="absolute"
+        inset="0"
+        w="100%"
+        h="100%"
+        objectFit="cover"
+        draggable={false}
+        style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
+      />
 
-      <CompareLabels aria-hidden="true">
-        <span>Before</span>
-        <span>After</span>
-      </CompareLabels>
-
-      <DragControl
-        type="button"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerEnd}
-        onPointerCancel={handlePointerEnd}
-        onLostPointerCapture={() => setIsDragging(false)}
-        onKeyDown={handleKeyDown}
-        aria-label={`Drag to compare before and after for ${job.title}`}
-        aria-valuemin={8}
-        aria-valuemax={92}
-        aria-valuenow={Math.round(split)}
-        aria-valuetext={`${Math.round(split)} percent showing after image`}
+      <Box
+        position="absolute"
+        top="0"
+        bottom="0"
+        left={`${position}%`}
+        transform="translateX(-50%)"
+        w="3px"
+        bg="white"
+        boxShadow="0 0 0 1px rgba(0,0,0,.08), 0 0 18px rgba(0,0,0,.14)"
+        pointerEvents="none"
+        zIndex="3"
       >
-        <HandleLine />
-        <HandleKnob>
-          <span />
-          <span />
-        </HandleKnob>
-      </DragControl>
-    </CompareWrap>
+        <Flex
+          position="absolute"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+          align="center"
+          justify="center"
+          w={{ base: "48px", md: "54px" }}
+          h={{ base: "48px", md: "54px" }}
+          rounded="full"
+          bg="white"
+          color="#171313"
+          boxShadow="0 12px 34px rgba(0,0,0,.22)"
+          fontSize={{ base: "lg", md: "xl" }}
+          fontWeight="800"
+          letterSpacing="-.25em"
+          pr="0.25em"
+        >
+          ‹›
+        </Flex>
+      </Box>
+
+      <input
+        aria-label={`Drag to compare before and after for ${item.title}`}
+        type="range"
+        min="0"
+        max="100"
+        value={position}
+        onChange={(event) => setPosition(Number(event.target.value))}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          opacity: 0,
+          cursor: "ew-resize",
+          zIndex: 4,
+          margin: 0,
+          touchAction: "pan-y",
+        }}
+      />
+
+      <Badge
+        position="absolute"
+        left={{ base: "3", md: "4" }}
+        bottom={{ base: "3", md: "4" }}
+        px="3.5"
+        py="2"
+        rounded="full"
+        bg="whiteAlpha.950"
+        color="#171313"
+        boxShadow="var(--kh-shadow-soft)"
+        zIndex="2"
+      >
+        Before
+      </Badge>
+      <Badge
+        position="absolute"
+        right={{ base: "3", md: "4" }}
+        bottom={{ base: "3", md: "4" }}
+        px="3.5"
+        py="2"
+        rounded="full"
+        bg="var(--kh-color-primary)"
+        color="white"
+        boxShadow="var(--kh-shadow-soft)"
+        zIndex="2"
+      >
+        After
+      </Badge>
+      <Badge
+        position="absolute"
+        top={{ base: "3", md: "4" }}
+        left="50%"
+        transform="translateX(-50%)"
+        px="4"
+        py="2"
+        rounded="full"
+        bg="rgba(23,19,19,.72)"
+        color="white"
+        backdropFilter="blur(10px)"
+        fontSize="xs"
+        fontWeight="800"
+        zIndex="2"
+        pointerEvents="none"
+      >
+        Drag to compare
+      </Badge>
+    </Box>
+  );
+}
+
+function TransformationRow({
+  item,
+  index,
+  state,
+  onLove,
+  onSave,
+}: {
+  item: Transformation;
+  index: number;
+  state: SavedTransformationState;
+  onLove: (item: Transformation) => void;
+  onSave: (item: Transformation) => void;
+}) {
+  const loved = state.loved.includes(item.id);
+  const saved = state.saved.includes(item.id);
+
+  return (
+    <Box
+      as="article"
+      py={{ base: "8", md: "12" }}
+      borderTop="1px solid"
+      borderColor="blackAlpha.100"
+    >
+      <SimpleGrid
+        columns={{ base: 1, xl: 12 }}
+        gap={{ base: "7", md: "10", xl: "12" }}
+        alignItems="center"
+      >
+        <Box gridColumn={{ xl: "span 7" }}>
+          <BeforeAfterSlider item={item} />
+        </Box>
+
+        <VStack gridColumn={{ xl: "span 5" }} align="stretch" gap="0">
+          <Flex justify="space-between" align="center" gap="4" mb="5">
+            <HStack gap="3">
+              <Text
+                fontSize="xs"
+                fontWeight="900"
+                letterSpacing=".12em"
+                color="blackAlpha.500"
+              >
+                {String(index + 1).padStart(2, "0")}
+              </Text>
+              <Text
+                fontSize="xs"
+                fontWeight="900"
+                letterSpacing=".12em"
+                textTransform="uppercase"
+                color="var(--kh-color-primary)"
+              >
+                {item.eyebrow}
+              </Text>
+            </HStack>
+            <HStack gap="2">
+              <IconButton
+                aria-label={loved ? `Unlike ${item.title}` : `Love ${item.title}`}
+                rounded="full"
+                minW="44px"
+                h="44px"
+                bg={loved ? "var(--kh-bg-pink-soft)" : "blackAlpha.50"}
+                color={loved ? "var(--kh-color-primary)" : "#171313"}
+                _hover={{ bg: "var(--kh-bg-pink-soft)", color: "var(--kh-color-primary)" }}
+                onClick={() => onLove(item)}
+              >
+                {loved ? "♥" : "♡"}
+              </IconButton>
+              <IconButton
+                aria-label={saved ? `Remove ${item.title} from My Lookbook` : `Save ${item.title} to My Lookbook`}
+                rounded="full"
+                minW="44px"
+                h="44px"
+                bg={saved ? "var(--kh-color-primary)" : "blackAlpha.50"}
+                color={saved ? "white" : "#171313"}
+                _hover={{ bg: saved ? "var(--kh-color-pink-600)" : "var(--kh-bg-pink-soft)" }}
+                onClick={() => onSave(item)}
+              >
+                {saved ? "✓" : "+"}
+              </IconButton>
+            </HStack>
+          </Flex>
+
+          <Heading
+            fontFamily="var(--kh-font-heading)"
+            fontWeight="400"
+            fontSize={{ base: "3xl", md: "5xl" }}
+            lineHeight=".98"
+            letterSpacing="-.05em"
+          >
+            {item.title}
+          </Heading>
+
+          <Text mt="5" color="blackAlpha.700" lineHeight="1.75" fontSize={{ base: "sm", md: "md" }}>
+            {item.story}
+          </Text>
+
+          <SimpleGrid columns={{ base: 1, sm: 2 }} gap="3" mt="6">
+            <Box p="5" rounded="22px" bg="blackAlpha.50">
+              <Text fontSize="xs" color="blackAlpha.600" fontWeight="700">
+                The result
+              </Text>
+              <Text mt="1" fontWeight="850">
+                {item.result}
+              </Text>
+            </Box>
+            <Box p="5" rounded="22px" bg="blackAlpha.50">
+              <Text fontSize="xs" color="blackAlpha.600" fontWeight="700">
+                Time to allow
+              </Text>
+              <Text mt="1" fontWeight="850">
+                {item.time}
+              </Text>
+            </Box>
+          </SimpleGrid>
+
+          <HStack gap="2" wrap="wrap" mt="5">
+            {item.tags.map((tag) => (
+              <Badge key={tag} px="3.5" py="2" rounded="full" bg="var(--kh-bg-pink-soft)" color="var(--kh-color-pink-800)">
+                {tag}
+              </Badge>
+            ))}
+          </HStack>
+
+          {item.carePlusFit ? (
+            <Box mt="5" p="5" rounded="22px" bg="var(--kh-bg-pink-soft)" border="1px solid" borderColor="var(--kh-color-pink-100)">
+              <Text fontWeight="900" color="var(--kh-color-pink-800)">
+                Want to keep this look maintained?
+              </Text>
+              <Text mt="1" fontSize="sm" color="var(--kh-color-pink-800)">
+                {item.carePlusFit}
+              </Text>
+            </Box>
+          ) : null}
+
+          <SimpleGrid columns={{ base: 1, sm: 2 }} gap="3" mt="7">
+            <Button
+              asChild
+              minH="13"
+              px="7"
+              rounded="full"
+              bg="#171313"
+              color="white"
+              _hover={{ bg: "var(--kh-color-primary)" }}
+            >
+              <Link href={`/services?service=${item.service.slug}&variant=${item.service.variant ?? ""}&transformation=${item.id}`}>
+                {item.service.label} →
+              </Link>
+            </Button>
+            <Button
+              minH="13"
+              px="7"
+              rounded="full"
+              variant="outline"
+              borderColor="blackAlpha.200"
+              bg="white"
+              onClick={() => onSave(item)}
+            >
+              {saved ? "✓ Saved to My Lookbook" : "+ Save this result"}
+            </Button>
+          </SimpleGrid>
+
+          {item.products?.length ? (
+            <Box mt="5">
+              <Text fontSize="xs" fontWeight="800" color="blackAlpha.600" mb="2">
+                Want the hair too?
+              </Text>
+              <HStack gap="2" wrap="wrap">
+                {item.products.map((product) => (
+                  <Button
+                    key={product.id}
+                    asChild
+                    size="sm"
+                    minH="10"
+                    px="5"
+                    rounded="full"
+                    bg="blackAlpha.50"
+                    color="#171313"
+                    _hover={{ bg: "blackAlpha.100" }}
+                  >
+                    <Link href={`/shop/${product.id}`}>{product.label} ↗</Link>
+                  </Button>
+                ))}
+              </HStack>
+            </Box>
+          ) : null}
+
+          <Button
+            asChild
+            alignSelf="start"
+            mt="4"
+            minH="10"
+            px="0"
+            variant="ghost"
+            color="var(--kh-color-primary)"
+            _hover={{ bg: "transparent", color: "var(--kh-color-pink-700)" }}
+          >
+            <Link href="/care-plus">See how Care+ can keep your hair handled every month →</Link>
+          </Button>
+        </VStack>
+      </SimpleGrid>
+    </Box>
   );
 }
 
 export default function BeforesAndAftersPage() {
-  const pageRef = useRef<HTMLElement | null>(null);
-  const loaderRef = useRef<HTMLDivElement | null>(null);
-  const [activeCategory, setActiveCategory] = useState<BeforeAfterCategory>("All");
-  const [items, setItems] = useState<BeforeAfterJob[]>([]);
-  const [cursor, setCursor] = useState<number | null>(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [category, setCategory] = useState<TransformationCategory>("All");
+  const [state, setState] = useState<SavedTransformationState>(emptyTransformationState);
 
-  const activeCount = useMemo(() => items.length.toString().padStart(2, "0"), [items.length]);
+  useEffect(() => setState(readState()), []);
 
-  const loadMore = useCallback(async () => {
-    if (isLoading || cursor === null) return;
+  const visible = useMemo(
+    () => (category === "All" ? transformations : transformations.filter((item) => item.category === category)),
+    [category],
+  );
 
-    setIsLoading(true);
-    setError(null);
+  const toggleLove = (item: Transformation) => {
+    const loved = state.loved.includes(item.id);
+    const next = {
+      ...state,
+      loved: loved ? state.loved.filter((id) => id !== item.id) : [...state.loved, item.id],
+    };
+    setState(next);
+    saveState(next);
+  };
 
-    try {
-      const response = await fetchBeforeAfterBatch(cursor, activeCategory);
-      setItems((currentItems) => {
-        const existingIds = new Set(currentItems.map((item) => item.id));
-        const nextItems = response.items.filter((item) => !existingIds.has(item.id));
-        return [...currentItems, ...nextItems];
-      });
-      setCursor(response.nextCursor);
-    } catch {
-      setError("We could not load more transformations. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeCategory, cursor, isLoading]);
-
-  useEffect(() => {
-    setItems([]);
-    setCursor(0);
-    setError(null);
-  }, [activeCategory]);
-
-  useEffect(() => {
-    if (cursor === 0 && !items.length && !isLoading) {
-      void loadMore();
-    }
-  }, [cursor, items.length, isLoading, loadMore]);
-
-  useEffect(() => {
-    const loader = loaderRef.current;
-    if (!loader) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry?.isIntersecting) {
-          void loadMore();
-        }
-      },
-      { rootMargin: "900px 0px 900px 0px", threshold: 0.01 },
-    );
-
-    observer.observe(loader);
-    return () => observer.disconnect();
-  }, [loadMore]);
-
-  useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion || !pageRef.current) return;
-
-    const ctx = gsap.context(() => {
-      gsap.set("[data-hero-reveal]", { y: 58, opacity: 0 });
-
-      gsap.to("[data-hero-reveal]", {
-        y: 0,
-        opacity: 1,
-        duration: 1.15,
-        ease: "power4.out",
-        stagger: 0.08,
-        scrollTrigger: {
-          trigger: pageRef.current,
-          start: "top 82%",
-        },
-      });
-
-      gsap.utils.toArray<HTMLElement>("[data-compare-panel]").forEach((panel) => {
-        const visual = panel.querySelector("[data-compare-visual]");
-        const copy = panel.querySelectorAll("[data-panel-copy]");
-        const number = panel.querySelector("[data-panel-number]");
-
-        gsap.fromTo(
-          panel,
-          { opacity: 0.6 },
-          {
-            opacity: 1,
-            duration: 1,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: panel,
-              start: "top 76%",
-            },
-          },
-        );
-
-        if (visual) {
-          gsap.fromTo(
-            visual,
-            { y: 110, scale: 0.96, clipPath: "inset(8% 2% 10% 2% round 2.4rem)" },
-            {
-              y: 0,
-              scale: 1,
-              clipPath: "inset(0% 0% 0% 0% round 0rem)",
-              duration: 1.25,
-              ease: "power4.out",
-              scrollTrigger: {
-                trigger: panel,
-                start: "top 78%",
-              },
-            },
-          );
-
-          gsap.to(visual, {
-            yPercent: -5,
-            ease: "none",
-            scrollTrigger: {
-              trigger: panel,
-              start: "top bottom",
-              end: "bottom top",
-              scrub: true,
-            },
-          });
-        }
-
-        if (copy.length) {
-          gsap.fromTo(
-            copy,
-            { y: 46, opacity: 0 },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.9,
-              stagger: 0.055,
-              ease: "power4.out",
-              scrollTrigger: {
-                trigger: panel,
-                start: "top 62%",
-              },
-            },
-          );
-        }
-
-        if (number) {
-          gsap.fromTo(
-            number,
-            { opacity: 0, xPercent: -18 },
-            {
-              opacity: 1,
-              xPercent: 0,
-              duration: 1.1,
-              ease: "power4.out",
-              scrollTrigger: {
-                trigger: panel,
-                start: "top 70%",
-              },
-            },
-          );
-        }
-      });
-
-      ScrollTrigger.refresh();
-    }, pageRef);
-
-    return () => ctx.revert();
-  }, [items.length, activeCategory]);
+  const toggleSave = (item: Transformation) => {
+    const saved = state.saved.includes(item.id);
+    const next = {
+      ...state,
+      saved: saved ? state.saved.filter((id) => id !== item.id) : [...state.saved, item.id],
+    };
+    setState(next);
+    saveState(next);
+    toaster.create({
+      title: saved ? "Removed from My Lookbook" : "Saved to My Lookbook",
+      description: saved
+        ? `${item.title} has been removed.`
+        : "You can come back to this transformation whenever you're ready to book.",
+      type: "info",
+    });
+  };
 
   return (
-    <PageMenuPlaceholder title="Befores and Afters" width="100%">
-      <PageShell ref={pageRef}>
-        <HeroSection aria-labelledby="before-after-title">
-          <HeroCopy>
-            <Kicker data-hero-reveal>Kaykay transformations</Kicker>
-            <HeroTitle id="before-after-title" data-hero-reveal>
-              Drag through the beauty story.
-            </HeroTitle>
-            <HeroText data-hero-reveal>
-              Full-screen before-and-after case studies for wig installs, braids, treatments, bridal beauty, and soft glam. Slide each divider to reveal the finished Kaykay Hair result.
-            </HeroText>
-          </HeroCopy>
-
-          <HeroCard data-hero-reveal>
-            <HeroMetric>
-              <span>{activeCount}</span>
-              <strong>loaded transformations</strong>
-            </HeroMetric>
-            <HeroSmallText>
-              More sections load automatically as you scroll, keeping the page light while still feeling cinematic.
-            </HeroSmallText>
-          </HeroCard>
-        </HeroSection>
-
-        <FilterBar data-hero-reveal aria-label="Filter before and after transformations">
-          <FilterIntro>
-            <span>Browse by service</span>
-            <strong>{activeCategory}</strong>
-          </FilterIntro>
-          <FilterList>
-            {categories.map((category) => (
-              <FilterButton
-                key={category}
-                type="button"
-                $active={activeCategory === category}
-                onClick={() => setActiveCategory(category)}
+    <PageMenuPlaceholder title="Before & Afters" width="96%">
+      <Box as="main" bg="white" color="#171313">
+        <Box px={{ base: "5", md: "10", xl: "14" }} pt={{ base: "12", md: "18" }} pb={{ base: "10", md: "16" }}>
+          <SimpleGrid columns={{ base: 1, lg: 12 }} gap={{ base: "8", lg: "10" }} alignItems="end">
+            <Box gridColumn={{ lg: "span 8" }}>
+              <Text
+                fontSize="xs"
+                fontWeight="900"
+                letterSpacing=".14em"
+                textTransform="uppercase"
+                color="var(--kh-color-primary)"
               >
-                {category}
-              </FilterButton>
+                Real before & after results
+              </Text>
+              <Heading
+                mt="3"
+                maxW="900px"
+                fontFamily="var(--kh-font-heading)"
+                fontWeight="400"
+                fontSize={{ base: "5xl", md: "7xl", xl: "8xl" }}
+                lineHeight=".9"
+                letterSpacing="-.06em"
+              >
+                See the difference before you book it.
+              </Heading>
+            </Box>
+            <VStack gridColumn={{ lg: "span 4" }} align="start" gap="5" pb={{ lg: "2" }}>
+              <Text fontSize={{ base: "md", md: "lg" }} color="blackAlpha.700" lineHeight="1.75">
+                Drag across each photo to compare the before and after. Find a result that feels like you, save it, then book the exact service or shop the hair behind it.
+              </Text>
+              <HStack gap="3" wrap="wrap">
+                <Button asChild minH="13" px="7" rounded="full" bg="#171313" color="white">
+                  <a href="#transformations">See the results ↓</a>
+                </Button>
+                <Button asChild minH="13" px="7" rounded="full" bg="var(--kh-bg-pink-soft)" color="var(--kh-color-primary)">
+                  <Link href="/my-lookbook">My Lookbook ({state.saved.length})</Link>
+                </Button>
+              </HStack>
+            </VStack>
+          </SimpleGrid>
+        </Box>
+
+        <Box
+          bg="var(--kh-color-black)"
+          color="white"
+          px={{ base: "5", md: "10", xl: "14" }}
+          py={{ base: "8", md: "10" }}
+        >
+          <SimpleGrid columns={{ base: 1, md: 3 }} gap={{ base: "6", md: "8" }}>
+            <Box>
+              <Text color="var(--kh-color-pink-300)" fontWeight="900" fontSize="sm">
+                Find your next look
+              </Text>
+              <Text mt="2" color="whiteAlpha.700" lineHeight="1.7">
+                Braids, wigs, healthy-hair treatments, glam and bridal finishes — only the transformations worth stopping for.
+              </Text>
+            </Box>
+            <Box>
+              <Text color="var(--kh-color-pink-300)" fontWeight="900" fontSize="sm">
+                Save what suits your life
+              </Text>
+              <Text mt="2" color="whiteAlpha.700" lineHeight="1.7">
+                Keep a shortlist for your next work refresh, event, protective style or full switch-up.
+              </Text>
+            </Box>
+            <Box>
+              <Text color="var(--kh-color-pink-300)" fontWeight="900" fontSize="sm">
+                Book without starting over
+              </Text>
+              <Text mt="2" color="whiteAlpha.700" lineHeight="1.7">
+                When you find the one, the related service is already connected so you can move straight into booking.
+              </Text>
+            </Box>
+          </SimpleGrid>
+        </Box>
+
+        <Box id="transformations" px={{ base: "5", md: "10", xl: "14" }} py={{ base: "12", md: "16" }}>
+          <Flex
+            direction={{ base: "column", lg: "row" }}
+            justify="space-between"
+            align={{ lg: "end" }}
+            gap="7"
+            mb={{ base: "4", md: "7" }}
+          >
+            <Box>
+              <Text fontSize="xs" fontWeight="900" letterSpacing=".14em" textTransform="uppercase" color="var(--kh-color-primary)">
+                {visible.length} transformations
+              </Text>
+              <Heading
+                mt="2"
+                fontFamily="var(--kh-font-heading)"
+                fontWeight="400"
+                fontSize={{ base: "4xl", md: "6xl" }}
+                letterSpacing="-.055em"
+              >
+                What do you want next?
+              </Heading>
+            </Box>
+
+            <HStack maxW="100%" overflowX="auto" gap="2" p="1.5" bg="blackAlpha.50" rounded="full">
+              {transformationCategories.map((item) => (
+                <Button
+                  key={item}
+                  flexShrink="0"
+                  minH="11"
+                  px="5"
+                  rounded="full"
+                  bg={category === item ? "#171313" : "transparent"}
+                  color={category === item ? "white" : "#171313"}
+                  _hover={{ bg: category === item ? "#171313" : "white" }}
+                  onClick={() => setCategory(item)}
+                >
+                  {item}
+                </Button>
+              ))}
+            </HStack>
+          </Flex>
+
+          <Box>
+            {visible.map((item, index) => (
+              <TransformationRow
+                key={item.id}
+                item={item}
+                index={index}
+                state={state}
+                onLove={toggleLove}
+                onSave={toggleSave}
+              />
             ))}
-          </FilterList>
-        </FilterBar>
+          </Box>
+        </Box>
 
-        <Panels aria-live="polite">
-          {items.map((job, index) => (
-            <ComparePanel key={job.id} data-compare-panel>
-              <PanelNumber data-panel-number>{(index + 1).toString().padStart(2, "0")}</PanelNumber>
+        <Box
+          mx={{ base: "5", md: "10", xl: "14" }}
+          mb={{ base: "8", md: "10" }}
+          p={{ base: "7", md: "11" }}
+          rounded={{ base: "30px", md: "44px" }}
+          bg="var(--kh-bg-pink-soft)"
+          border="1px solid"
+          borderColor="var(--kh-color-pink-100)"
+        >
+          <SimpleGrid columns={{ base: 1, lg: 2 }} gap="9" alignItems="center">
+            <Box>
+              <Text fontSize="xs" fontWeight="900" letterSpacing=".14em" textTransform="uppercase" color="var(--kh-color-primary)">
+                Care+ monthly hair membership
+              </Text>
+              <Heading
+                mt="3"
+                fontFamily="var(--kh-font-heading)"
+                fontWeight="400"
+                fontSize={{ base: "4xl", md: "6xl" }}
+                lineHeight=".95"
+                letterSpacing="-.055em"
+              >
+                Love being freshly done? Make it easier to stay that way.
+              </Heading>
+            </Box>
+            <VStack align="start" gap="5">
+              <Text color="blackAlpha.700" lineHeight="1.75">
+                Care+ is for women who want their hair handled regularly without the last-minute scramble. Get predictable monthly spend, routine maintenance and member booking benefits.
+              </Text>
+              <Button
+                asChild
+                minH="13"
+                px="7"
+                rounded="full"
+                bg="var(--kh-color-primary)"
+                color="white"
+                _hover={{ bg: "var(--kh-color-pink-600)" }}
+              >
+                <Link href="/care-plus">See Care+ plans →</Link>
+              </Button>
+            </VStack>
+          </SimpleGrid>
+        </Box>
 
-              <PanelCopy data-panel-copy-wrap>
-                <PanelMeta data-panel-copy>
-                  <span>{job.category}</span>
-                  <span>{job.duration}</span>
-                </PanelMeta>
-                <PanelTitle data-panel-copy>{job.title}</PanelTitle>
-                <PanelCaption data-panel-copy>{job.caption}</PanelCaption>
-                <PanelDescription data-panel-copy>{job.description}</PanelDescription>
-                <PanelTags data-panel-copy>
-                  <span>{job.service}</span>
-                  <span>{job.resultNote}</span>
-                </PanelTags>
-              </PanelCopy>
-
-              <PanelVisual data-compare-visual>
-                <CompareSlider job={job} index={index} />
-              </PanelVisual>
-            </ComparePanel>
-          ))}
-        </Panels>
-
-        <AsyncLoader ref={loaderRef} aria-live="polite">
-          {isLoading ? (
-            <>
-              <LoaderLine />
-              <span>Loading the next transformation</span>
-            </>
-          ) : cursor !== null ? (
-            <LoadMoreButton type="button" onClick={() => void loadMore()}>
-              Load more transformations
-            </LoadMoreButton>
-          ) : (
-            <EndNote>
-              <span>End of current set</span>
-              <strong>Replace the placeholder data with real Kaykay Hair before and afters.</strong>
-            </EndNote>
-          )}
-          {error ? <ErrorText>{error}</ErrorText> : null}
-        </AsyncLoader>
-      </PageShell>
+        <Box
+          mx={{ base: "5", md: "10", xl: "14" }}
+          mb={{ base: "14", md: "20" }}
+          p={{ base: "7", md: "10" }}
+          rounded={{ base: "30px", md: "44px" }}
+          bg="var(--kh-color-blue)"
+          color="white"
+        >
+          <Flex direction={{ base: "column", md: "row" }} justify="space-between" align={{ md: "center" }} gap="7">
+            <Box maxW="760px">
+              <Text fontSize="xs" fontWeight="900" letterSpacing=".14em" textTransform="uppercase" color="whiteAlpha.700">
+                Your saved results
+              </Text>
+              <Heading mt="2" fontFamily="var(--kh-font-heading)" fontWeight="400" fontSize={{ base: "3xl", md: "5xl" }}>
+                Keep the looks you would genuinely wear.
+              </Heading>
+              <Text mt="3" color="whiteAlpha.700">
+                Your saved transformations sit alongside your Look Book inspiration on this device.
+              </Text>
+            </Box>
+            <Button asChild minH="13" px="7" rounded="full" bg="white" color="#171313">
+              <Link href="/my-lookbook">Open My Lookbook ({state.saved.length}) →</Link>
+            </Button>
+          </Flex>
+        </Box>
+      </Box>
     </PageMenuPlaceholder>
   );
 }
-
-const PageShell = styled.main`
-  --ink: #15120f;
-  --muted: rgba(21, 18, 15, 0.62);
-  --line: rgba(21, 18, 15, 0.11);
-  --paper: #fffdf9;
-  --soft: #f7f1ea;
-  --cream: #fbf7f0;
-  --taupe: #4d3f2e;
-
-  width: 100%;
-  overflow: clip;
-  color: var(--ink);
-  background:
-    radial-gradient(circle at 80% 10%, rgba(77, 63, 46, 0.08), transparent 34rem),
-    linear-gradient(180deg, #fff 0%, var(--paper) 52%, #fff 100%);
-`;
-
-const HeroSection = styled.section`
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.45fr);
-  gap: clamp(2rem, 5vw, 7rem);
-  min-height: 88svh;
-  padding: clamp(6.5rem, 10vw, 10rem) clamp(1.2rem, 4vw, 5rem) 4rem;
-  border-bottom: 1px solid var(--line);
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-    min-height: auto;
-  }
-`;
-
-const HeroCopy = styled.div`
-  align-self: end;
-  max-width: 78rem;
-`;
-
-const Kicker = styled.p`
-  margin: 0 0 1.4rem;
-  color: var(--muted);
-  font-size: 0.75rem;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-`;
-
-const HeroTitle = styled.h1`
-  max-width: 11ch;
-  margin: 0;
-  font-family: "Kaykay Bodoni", "Bodoni 72", "Playfair Display", Georgia, serif;
-  font-size: clamp(4.3rem, 13.2vw, 14.5rem);
-  font-weight: 560;
-  letter-spacing: -0.085em;
-  line-height: 0.78;
-`;
-
-const HeroText = styled.p`
-  max-width: 43rem;
-  margin: clamp(1.4rem, 3vw, 2.5rem) 0 0;
-  color: var(--muted);
-  font-size: clamp(1rem, 1.7vw, 1.35rem);
-  line-height: 1.7;
-`;
-
-const HeroCard = styled.aside`
-  align-self: end;
-  padding: clamp(1.2rem, 2.5vw, 2rem);
-  border: 1px solid var(--line);
-  border-radius: 1.8rem;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 2rem 6rem rgba(21, 18, 15, 0.07);
-`;
-
-const HeroMetric = styled.div`
-  display: grid;
-  gap: 0.5rem;
-
-  span {
-    font-family: "Kaykay Bodoni", "Bodoni 72", "Playfair Display", Georgia, serif;
-    font-size: clamp(5rem, 10vw, 8.5rem);
-    font-weight: 560;
-    letter-spacing: -0.08em;
-    line-height: 0.82;
-  }
-
-  strong {
-    color: var(--muted);
-    font-size: 0.75rem;
-    font-weight: 900;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-  }
-`;
-
-const HeroSmallText = styled.p`
-  margin: 3rem 0 0;
-  color: var(--muted);
-  font-size: 0.95rem;
-  line-height: 1.65;
-`;
-
-const FilterBar = styled.section`
-  position: sticky;
-  top: 0;
-  z-index: 8;
-  display: grid;
-  grid-template-columns: minmax(12rem, 0.35fr) 1fr;
-  gap: 1rem;
-  align-items: center;
-  padding: 0.9rem clamp(1.2rem, 4vw, 5rem);
-  border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(20px);
-
-  @media (max-width: 860px) {
-    grid-template-columns: 1fr;
-    position: relative;
-  }
-`;
-
-const FilterIntro = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-
-  span {
-    color: var(--muted);
-    font-size: 0.68rem;
-    font-weight: 850;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  strong {
-    font-size: 1rem;
-  }
-`;
-
-const FilterList = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.55rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-
-  @media (max-width: 860px) {
-    justify-content: flex-start;
-  }
-`;
-
-const FilterButton = styled.button<{ $active: boolean }>`
-  flex: 0 0 auto;
-  min-height: 2.85rem;
-  padding: 0 1rem;
-  border: 1px solid ${({ $active }) => ($active ? "var(--ink)" : "var(--line)")};
-  border-radius: 999rem;
-  color: ${({ $active }) => ($active ? "#fff" : "var(--ink)")};
-  background: ${({ $active }) => ($active ? "var(--ink)" : "#fff")};
-  font: inherit;
-  font-size: 0.75rem;
-  font-weight: 850;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: transform 260ms ease, border-color 260ms ease, background 260ms ease, color 260ms ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    border-color: var(--ink);
-  }
-`;
-
-const Panels = styled.div`
-  display: grid;
-`;
-
-const ComparePanel = styled.section`
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(20rem, 0.38fr) minmax(0, 1fr);
-  gap: clamp(1.25rem, 3vw, 3rem);
-  min-height: 100svh;
-  padding: clamp(4rem, 8vw, 7.5rem) clamp(1.2rem, 4vw, 5rem);
-  border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.72);
-
-  &:nth-child(even) {
-    grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.38fr);
-
-    [data-panel-copy-wrap] {
-      order: 2;
-    }
-
-    [data-compare-visual] {
-      order: 1;
-    }
-  }
-
-  @media (max-width: 980px) {
-    grid-template-columns: 1fr;
-    min-height: auto;
-
-    &:nth-child(even) {
-      grid-template-columns: 1fr;
-
-      [data-panel-copy-wrap],
-      [data-compare-visual] {
-        order: initial;
-      }
-    }
-  }
-`;
-
-const PanelNumber = styled.div`
-  position: absolute;
-  left: clamp(1.2rem, 4vw, 5rem);
-  top: clamp(1.2rem, 3vw, 2.2rem);
-  color: rgba(21, 18, 15, 0.14);
-  font-family: "Kaykay Bodoni", "Bodoni 72", "Playfair Display", Georgia, serif;
-  font-size: clamp(3rem, 8vw, 8rem);
-  font-weight: 560;
-  letter-spacing: -0.08em;
-  line-height: 0.8;
-  pointer-events: none;
-`;
-
-const PanelCopy = styled.div`
-  position: sticky;
-  top: 8rem;
-  align-self: start;
-  display: flex;
-  min-height: calc(100svh - 12rem);
-  flex-direction: column;
-  justify-content: flex-end;
-  padding-top: 8rem;
-
-  @media (max-width: 980px) {
-    position: relative;
-    top: auto;
-    min-height: auto;
-    padding-top: 3rem;
-  }
-`;
-
-const PanelMeta = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-bottom: 1.1rem;
-
-  span {
-    display: inline-flex;
-    min-height: 2.25rem;
-    align-items: center;
-    padding: 0 0.85rem;
-    border: 1px solid var(--line);
-    border-radius: 999rem;
-    color: var(--muted);
-    background: #fff;
-    font-size: 0.68rem;
-    font-weight: 900;
-    letter-spacing: 0.11em;
-    text-transform: uppercase;
-  }
-`;
-
-const PanelTitle = styled.h2`
-  max-width: 9ch;
-  margin: 0;
-  font-family: "Kaykay Bodoni", "Bodoni 72", "Playfair Display", Georgia, serif;
-  font-size: clamp(3.8rem, 8.5vw, 9.5rem);
-  font-weight: 560;
-  letter-spacing: -0.085em;
-  line-height: 0.82;
-`;
-
-const PanelCaption = styled.p`
-  max-width: 27rem;
-  margin: 1.4rem 0 0;
-  color: var(--ink);
-  font-size: clamp(1.08rem, 1.8vw, 1.45rem);
-  line-height: 1.45;
-`;
-
-const PanelDescription = styled.p`
-  max-width: 32rem;
-  margin: 1rem 0 0;
-  color: var(--muted);
-  font-size: 0.98rem;
-  line-height: 1.75;
-`;
-
-const PanelTags = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 1.4rem;
-
-  span {
-    display: inline-flex;
-    align-items: center;
-    min-height: 2.5rem;
-    padding: 0 0.9rem;
-    border-radius: 999rem;
-    background: var(--soft);
-    color: var(--taupe);
-    font-size: 0.74rem;
-    font-weight: 850;
-  }
-`;
-
-const PanelVisual = styled.div`
-  align-self: center;
-  width: 100%;
-`;
-
-const CompareWrap = styled.div<{ $isDragging: boolean }>`
-  --split: 50%;
-
-  position: relative;
-  width: 100%;
-  min-height: min(76svh, 58rem);
-  overflow: hidden;
-  border: 1px solid rgba(21, 18, 15, 0.09);
-  border-radius: clamp(1.4rem, 2.8vw, 3rem);
-  background: var(--cream);
-  cursor: ${({ $isDragging }) => ($isDragging ? "grabbing" : "ew-resize")};
-  box-shadow: 0 3rem 7rem rgba(21, 18, 15, 0.09);
-  user-select: none;
-  touch-action: none;
-
-  @media (max-width: 980px) {
-    min-height: 68svh;
-  }
-
-  @media (max-width: 640px) {
-    min-height: 32rem;
-  }
-`;
-
-const ImageLayer = styled.div`
-  position: absolute;
-  inset: 0;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    filter: saturate(0.96) contrast(1.02);
-    pointer-events: none;
-  }
-`;
-
-const AfterLayer = styled(ImageLayer)`
-  clip-path: inset(0 calc(100% - var(--split)) 0 0);
-
-  img {
-    filter: saturate(1.02) contrast(1.03) brightness(1.02);
-  }
-`;
-
-const CompareLabels = styled.div`
-  position: absolute;
-  inset: 1rem 1rem auto;
-  z-index: 2;
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  pointer-events: none;
-
-  span {
-    display: inline-flex;
-    min-height: 2.4rem;
-    align-items: center;
-    padding: 0 0.85rem;
-    border: 1px solid rgba(255, 255, 255, 0.38);
-    border-radius: 999rem;
-    color: #fff;
-    background: rgba(21, 18, 15, 0.26);
-    backdrop-filter: blur(12px);
-    font-size: 0.68rem;
-    font-weight: 900;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-  }
-`;
-
-const DragControl = styled.button`
-  position: absolute;
-  inset: 0 auto 0 var(--split);
-  z-index: 4;
-  width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: ew-resize;
-  transform: translateX(-50%);
-  touch-action: none;
-
-  &:focus-visible {
-    outline: none;
-  }
-
-  &:focus-visible div:last-child {
-    box-shadow: 0 0 0 0.35rem rgba(255, 255, 255, 0.44), 0 0 0 0.55rem rgba(21, 18, 15, 0.38);
-  }
-`;
-
-const HandleLine = styled.div`
-  position: absolute;
-  inset: 0 auto 0 50%;
-  width: 1px;
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 0 2rem rgba(21, 18, 15, 0.22);
-  transform: translateX(-50%);
-`;
-
-const HandleKnob = styled.div`
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  display: grid;
-  width: 4.8rem;
-  height: 4.8rem;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.52);
-  border-radius: 999rem;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 1.2rem 3rem rgba(21, 18, 15, 0.2);
-  transform: translate(-50%, -50%);
-
-  &::before {
-    content: "";
-    position: absolute;
-    width: 2.15rem;
-    height: 2.15rem;
-    border: 1px solid rgba(21, 18, 15, 0.13);
-    border-radius: inherit;
-  }
-
-  span {
-    position: absolute;
-    width: 0.55rem;
-    height: 0.55rem;
-    border-top: 1.5px solid var(--ink);
-    border-left: 1.5px solid var(--ink);
-  }
-
-  span:first-child {
-    transform: translateX(-0.58rem) rotate(-45deg);
-  }
-
-  span:last-child {
-    transform: translateX(0.58rem) rotate(135deg);
-  }
-`;
-
-const AsyncLoader = styled.div`
-  display: grid;
-  min-height: 42svh;
-  place-items: center;
-  gap: 1rem;
-  padding: 5rem 1.2rem 7rem;
-  color: var(--muted);
-  text-align: center;
-
-  > span {
-    font-size: 0.74rem;
-    font-weight: 900;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-`;
-
-const LoaderLine = styled.div`
-  position: relative;
-  width: min(22rem, 70vw);
-  height: 1px;
-  overflow: hidden;
-  background: rgba(21, 18, 15, 0.1);
-
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 42%;
-    background: var(--ink);
-    animation: loadingSlide 1.1s ease-in-out infinite;
-  }
-
-  @keyframes loadingSlide {
-    0% {
-      transform: translateX(-110%);
-    }
-    100% {
-      transform: translateX(260%);
-    }
-  }
-`;
-
-const LoadMoreButton = styled.button`
-  min-height: 3.4rem;
-  padding: 0 1.2rem;
-  border: 1px solid var(--ink);
-  border-radius: 999rem;
-  color: #fff;
-  background: var(--ink);
-  font: inherit;
-  font-size: 0.75rem;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: transform 260ms ease, background 260ms ease, color 260ms ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    color: var(--ink);
-    background: #fff;
-  }
-`;
-
-const EndNote = styled.div`
-  display: grid;
-  gap: 0.45rem;
-  max-width: 32rem;
-
-  span {
-    color: var(--muted);
-    font-size: 0.72rem;
-    font-weight: 900;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  strong {
-    color: var(--ink);
-    font-family: "Kaykay Bodoni", "Bodoni 72", "Playfair Display", Georgia, serif;
-    font-size: clamp(2.2rem, 5vw, 4rem);
-    font-weight: 560;
-    letter-spacing: -0.06em;
-    line-height: 0.95;
-  }
-`;
-
-const ErrorText = styled.p`
-  margin: 0;
-  color: #8a2d22;
-  font-size: 0.9rem;
-`;
