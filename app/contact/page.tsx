@@ -6,6 +6,7 @@ import {
   Flex,
   Heading,
   HStack,
+  Link,
   SimpleGrid,
   Stack,
   Text,
@@ -76,8 +77,7 @@ function ContactAction({
   const Icon = icon
 
   return (
-    <Box
-      as="a"
+    <Link
       href={href}
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
@@ -162,7 +162,7 @@ function ContactAction({
           <Box as={FiArrowUpRight} boxSize="17px" />
         </Flex>
       </Flex>
-    </Box>
+    </Link>
   )
 }
 
@@ -258,9 +258,8 @@ export default function ContactPage() {
                   const Icon = social.icon
 
                   return (
-                    <Box
+                    <Link
                       key={social.label}
-                      as="a"
                       href={social.href}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -306,7 +305,7 @@ export default function ContactPage() {
                         </HStack>
                         <Box as={FiArrowUpRight} boxSize="15px" flexShrink={0} />
                       </Flex>
-                    </Box>
+                    </Link>
                   )
                 })}
               </SimpleGrid>
@@ -349,8 +348,7 @@ export default function ContactPage() {
                 </Text>
               </Stack>
 
-              <Box
-                as="a"
+              <Link
                 href={WHATSAPP_CHAT_URL}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -372,7 +370,7 @@ export default function ContactPage() {
               >
                 <Box as={FaWhatsapp} boxSize="18px" />
                 Start a WhatsApp chat
-              </Box>
+              </Link>
             </Flex>
           </Box>
         </Stack>

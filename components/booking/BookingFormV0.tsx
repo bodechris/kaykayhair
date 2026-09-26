@@ -98,11 +98,14 @@ function ChoiceCard({
   compact?: boolean
 }) {
   return (
-    <Box
-      as="button"
+    <Button
       type="button"
       textAlign="left"
       w="full"
+      h="auto"
+      display="block"
+      whiteSpace="normal"
+      justifyContent="stretch"
       borderWidth="1px"
       borderColor={selected ? "var(--kh-color-ink)" : "gray.200"}
       bg={selected ? "var(--kh-color-ink)" : "white"}
@@ -128,7 +131,7 @@ function ChoiceCard({
         </Box>
         {selected ? <Box pt="1"><FiCheck /></Box> : null}
       </Flex>
-    </Box>
+    </Button>
   )
 }
 
@@ -306,6 +309,7 @@ export default function BookingFormV0({ selectedServices, initialVariantByServic
   const [depositAccepted, setDepositAccepted] = useState(false)
   const [invalidTarget, setInvalidTarget] = useState("")
   const [savedDraft, setSavedDraft] = useState<BookingDraft | null>(null)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
 
   const chosen = useMemo(() => selectedModels.map((service) => {
     const chosenSlug = variantByService[service.slug]
@@ -430,18 +434,17 @@ export default function BookingFormV0({ selectedServices, initialVariantByServic
     setStep((current) => Math.max(current - 1, 0))
   }
 
-  const createDraft = () => {
+  const createDraft = async () => {
     setInvalidTarget("")
     if (!depositAccepted) {
       revealError("Confirm the non-refundable deposit policy before continuing to payment.", "deposit-policy")
       return
     }
-    if (!dateKey || !time || chosen.length !== selectedModels.length) return
+    if (!dateKey || !time || chosen.length !== selectedModels.length || isSavingDraft) return
 
-    const draft: BookingDraft = {
-      id: `KKH-${Date.now().toString(36).toUpperCase()}`,
+    const policyAcceptedAt = new Date().toISOString()
+    const draftBase: Omit<BookingDraft, "id" | "createdAt" | "depositAmount"> = {
       status: "pending_payment",
-      createdAt: new Date().toISOString(),
       selectedServices: chosen.map((item) => ({
         serviceSlug: item!.service.slug,
         serviceTitle: item!.service.title,
@@ -455,20 +458,69 @@ export default function BookingFormV0({ selectedServices, initialVariantByServic
       time,
       customer: { firstName, lastName, email, phone, note },
       referenceImages,
-      depositAmount,
-      policyAcceptedAt: new Date().toISOString(),
+      policyAcceptedAt,
       policyVersion: "2026-09",
     }
 
+    setIsSavingDraft(true)
     try {
-      const existing = JSON.parse(localStorage.getItem("kaykayhair:booking-drafts") || "[]") as BookingDraft[]
-      localStorage.setItem("kaykayhair:booking-drafts", JSON.stringify([draft, ...existing].slice(0, 20)))
-    } catch {
-      // Storage is only a temporary bridge until the secured booking API is connected.
-    }
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          selectedServices: draftBase.selectedServices.map((item) => ({
+            serviceSlug: item.serviceSlug,
+            subserviceSlug: item.subserviceSlug,
+          })),
+          answers,
+          date: dateKey,
+          time,
+          customer: draftBase.customer,
+          referenceImages,
+          depositAccepted: true,
+          policyAcceptedAt,
+          policyVersion: draftBase.policyVersion,
+        }),
+      })
 
-    setSavedDraft(draft)
-    onDraftCreated?.(draft)
+      const result = await response.json() as {
+        id?: string
+        createdAt?: string
+        depositAmount?: number
+        error?: string
+      }
+
+      if (!response.ok || !result.id || !result.createdAt) {
+        throw new Error(result.error || "Booking could not be saved.")
+      }
+
+      const draft: BookingDraft = {
+        ...draftBase,
+        id: result.id,
+        createdAt: result.createdAt,
+        depositAmount: result.depositAmount ?? depositAmount,
+      }
+
+      setSavedDraft(draft)
+      onDraftCreated?.(draft)
+      toaster.create({
+        type: "success",
+        title: "Booking saved",
+        description: `Reference ${draft.id} has been saved.`,
+        duration: 4500,
+        closable: true,
+      })
+    } catch (error) {
+      toaster.create({
+        type: "error",
+        title: "Booking not saved",
+        description: error instanceof Error ? error.message : "Please try again.",
+        duration: 6000,
+        closable: true,
+      })
+    } finally {
+      setIsSavingDraft(false)
+    }
   }
 
   if (!selectedModels.length) {
@@ -482,7 +534,7 @@ export default function BookingFormV0({ selectedServices, initialVariantByServic
         <Box>
           <Text fontSize="sm" fontWeight="700" color="var(--kh-color-primary)">BOOKING DRAFT CREATED</Text>
           <Heading mt="2" size="2xl">Your appointment is ready for deposit payment.</Heading>
-          <Text mt="3" color="gray.600">Reference {savedDraft.id}. Your slot is not globally secured until the payment and server-side slot lock are connected.</Text>
+          <Text mt="3" color="gray.600">Reference {savedDraft.id}. Your booking is saved as pending payment. The appointment becomes confirmed once the deposit payment is connected and completed.</Text>
         </Box>
         <Box borderWidth="1px" borderRadius="2xl" p="5">
           <Stack gap="3">
@@ -656,11 +708,13 @@ export default function BookingFormV0({ selectedServices, initialVariantByServic
                     const key = toDateKey(date)
                     const selected = dateKey === key
                     return (
-                      <Box
-                        as="button"
+                      <Button
                         type="button"
                         key={key}
                         minW="92px"
+                        h="auto"
+                        display="block"
+                        whiteSpace="normal"
                         borderWidth="1px"
                         borderColor={selected ? "var(--kh-color-primary)" : "gray.200"}
                         bg={selected ? "var(--kh-color-primary)" : "white"}
@@ -685,7 +739,7 @@ export default function BookingFormV0({ selectedServices, initialVariantByServic
                         <Text mt="2" fontSize="xs" fontWeight="700" opacity={selected ? 0.82 : 0.55}>
                           {date.toLocaleDateString("en-ZA", { month: "short" })}
                         </Text>
-                      </Box>
+                      </Button>
                     )
                   })}
                 </HStack>
@@ -922,8 +976,8 @@ export default function BookingFormV0({ selectedServices, initialVariantByServic
               <FieldError message={invalidTarget === "deposit-policy" ? "Confirm the deposit policy to continue to payment." : undefined} />
             </Box>
 
-            <Button size="lg" minH="56px" px={{ base: "7", md: "9" }} borderRadius="full" bg="var(--kh-color-ink)" color="white" _hover={{ bg: "var(--kh-color-primary)" }} onClick={createDraft}>
-              Continue to pay {formatZar(depositAmount)} deposit <FiArrowRight />
+            <Button size="lg" minH="56px" px={{ base: "7", md: "9" }} borderRadius="full" bg="var(--kh-color-ink)" color="white" _hover={{ bg: "var(--kh-color-primary)" }} onClick={createDraft} disabled={isSavingDraft}>
+              {isSavingDraft ? "Saving booking…" : <>Continue to pay {formatZar(depositAmount)} deposit <FiArrowRight /></>}
             </Button>
             <HStack justify="center" gap="2" color="gray.500">
               <FiLock />

@@ -63,3 +63,29 @@ All new forms should follow the same rule: if the application already knows the 
 - Open-ended text: reserve textareas for information that genuinely cannot be predicted.
 - Validation: guide the user to the exact field and explain how to fix it; do not make them hunt for errors.
 - Admin-created booking questions can use `date` and `time` types so they inherit the same guided controls automatically.
+
+## Kaykay Hair Admin (v0.1 foundation)
+
+The custom admin lives at `/admin` and is designed for the existing Netlify + Next.js deployment.
+
+### Stack
+- Better Auth for customer/admin authentication and sessions
+- Better Auth Admin plugin for role support
+- Netlify Database (Postgres) as the recommended production database
+- Drizzle ORM for Kaykay Hair application data
+- Chakra UI for the admin interface
+
+### First-time setup
+1. In Netlify open **Data & storage → Database** and create a Netlify Database for this project.
+2. Make sure `NETLIFY_DB_URL` is available to the site (Netlify supplies this when the database is connected).
+3. Add `BETTER_AUTH_SECRET` to Netlify environment variables. Use a long random value.
+4. Set `BETTER_AUTH_URL=https://kaykayhair.com` in production.
+5. Install the new dependencies from `package.json`.
+6. Run Better Auth's migration: `npm run auth:migrate`.
+7. Generate/apply the Kaykay Hair schema: `npm run db:generate` then `npm run db:migrate`.
+8. Create the first Better Auth email/password user, then set its `role` to `admin` once in Postgres. After that, admin user management can be handled through Better Auth's admin APIs/UI.
+
+Until the database is configured, `/admin/dashboard` intentionally opens in **Setup mode** so the interface can be reviewed without breaking the public site. Real admin authentication is enforced once a database connection is present.
+
+### Data covered by the schema
+Products, carts, orders, services, service variants/questions, bookings, Care+ plans/memberships, leads, lead magnets, Lookbook items, Before/After transformations, user collections/saves/likes, testimonials and homepage hero slides.

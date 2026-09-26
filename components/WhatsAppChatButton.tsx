@@ -1,7 +1,8 @@
 "use client"
 
-import { Box, Flex, Text } from "@chakra-ui/react"
+import { Box, Flex, Link, Text } from "@chakra-ui/react"
 import { FaWhatsapp } from "react-icons/fa"
+import { usePathname } from "next/navigation"
 
 const WHATSAPP_NUMBER = "27717824439"
 const WHATSAPP_MESSAGE =
@@ -12,9 +13,11 @@ export const WHATSAPP_CHAT_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encode
 )}`
 
 export default function WhatsAppChatButton() {
+  const pathname = usePathname()
+  if (pathname.startsWith("/admin")) return null
+
   return (
-    <Box
-      as="a"
+    <Link
       href={WHATSAPP_CHAT_URL}
       target="_blank"
       rel="noopener noreferrer"
@@ -60,6 +63,6 @@ export default function WhatsAppChatButton() {
           Chat with us on WhatsApp
         </Text>
       </Flex>
-    </Box>
+    </Link>
   )
 }

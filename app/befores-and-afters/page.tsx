@@ -57,7 +57,7 @@ function BeforeAfterSlider({ item }: { item: Transformation }) {
       bg="blackAlpha.100"
       aspectRatio={{ base: "4 / 5", md: "16 / 11" }}
       userSelect="none"
-      sx={{ "&:focus-within": { boxShadow: "0 0 0 4px var(--kh-color-pink-100)" } }}
+      _focusWithin={{ boxShadow: "0 0 0 4px var(--kh-color-pink-100)" }}
     >
       <Image
         src={item.beforeImage}

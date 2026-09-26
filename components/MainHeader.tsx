@@ -18,6 +18,7 @@ const navItems = [
 
 function MainHeader() {
   const pathname = usePathname();
+  if (pathname.startsWith("/admin")) return null;
 
   return (
     <MainHeaderWrapper>

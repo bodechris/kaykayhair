@@ -229,11 +229,11 @@ export default function LookbookPage() {
           </Flex>
           <SimpleGrid columns={{ base: 2, md: 4 }} gap={{ base: "3", md: "5" }}>
             {trending.map((look) => (
-              <Box key={look.id} as="button" textAlign="left" onClick={() => setActiveLook(look)} overflow="hidden" rounded={{ base: "20px", md: "28px" }} position="relative" aspectRatio=".78" bg="whiteAlpha.100">
+              <Button key={look.id} type="button" variant="plain" p="0" h="auto" minH="0" textAlign="left" onClick={() => setActiveLook(look)} overflow="hidden" rounded={{ base: "20px", md: "28px" }} position="relative" aspectRatio=".78" bg="whiteAlpha.100">
                 <Image src={look.image} alt={look.alt} w="100%" h="100%" objectFit="cover" />
                 <Box position="absolute" inset="0" bg="linear-gradient(180deg, transparent 45%, rgba(0,0,0,.7))" />
                 <Box position="absolute" left="4" right="4" bottom="4"><Text fontWeight="800">{look.shortTitle}</Text><Text mt="1" fontSize="xs" color="whiteAlpha.700">{look.trend}</Text></Box>
-              </Box>
+              </Button>
             ))}
           </SimpleGrid>
         </Box>
